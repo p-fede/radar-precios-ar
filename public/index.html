@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cazador de Precios Bug y Ofertas</title>
+  <title>Auditor de Precios y Cazador de Ofertas Reales</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-neutral-950 text-neutral-100 min-h-screen p-4 md:p-8 font-sans">
@@ -11,27 +11,27 @@
     <!-- Header -->
     <header class="text-center mb-8">
       <div class="inline-block bg-red-950 border border-red-800 text-red-400 text-xs font-black uppercase px-3 py-1 rounded-full mb-3 tracking-widest animate-pulse">
-        🚨 DETECTOR DE ERRORES DE CARGA Y PRECIOS BUG
+        🛡️ AUDITOR ANTIESTAFA & RADAR DE PRECIOS BUG
       </div>
-      <h1 class="text-3xl md:text-5xl font-black text-white mb-2">Cazador de Precios Irrisorios</h1>
-      <p class="text-neutral-400 text-sm md:text-base">Detecta liquidaciones, promociones y errores de precio (ej. comida < $500, 70% a 90% OFF)</p>
+      <h1 class="text-3xl md:text-5xl font-black text-white mb-2">Cazador de Ofertas Reales</h1>
+      <p class="text-neutral-400 text-sm md:text-base">Detecta si el descuento es auténtico o si inflaron el precio tachado</p>
     </header>
 
     <!-- Panel de Control y Filtros -->
     <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-6 mb-8 max-w-4xl mx-auto shadow-2xl">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <!-- Selector de Plataforma -->
+        <!-- Selector de Tienda -->
         <div>
           <label class="block text-xs font-bold text-neutral-400 mb-1">PLATAFORMA</label>
           <select id="storeSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="pedidosya">🔴 PedidosYa (Markets CABA)</option>
-            <option value="rappi">🟠 Rappi (Turbo CABA)</option>
-            <option value="mercadolibre">🟡 MercadoLibre (Outlet y Chollos)</option>
+            <option value="carrefour" selected>🔵 Carrefour (Auditado)</option>
             <option value="dia">🔴 Supermercados Día (Bugs y 2x1)</option>
+            <option value="easy">🟠 Easy (Herramientas / Hogar)</option>
             <option value="fravega">🟣 Frávega (Tecno / Electro)</option>
-            <option value="carrefour">🔵 Carrefour (Hipermercado)</option>
-            <option value="easy">🟠 Easy (Herramientas / Bazar)</option>
-            <option value="coto">🔴 Coto Digital (Ofertas)</option>
+            <option value="mercadolibre">🟡 MercadoLibre (Ofertas)</option>
+            <option value="coto">🔴 Coto Digital (Acceso Directo)</option>
+            <option value="pedidosya">🔴 PedidosYa (Markets)</option>
+            <option value="rappi">🟠 Rappi (Turbo)</option>
           </select>
         </div>
 
@@ -39,8 +39,8 @@
         <div>
           <label class="block text-xs font-bold text-neutral-400 mb-1">FILTRO DE OFERTA</label>
           <select id="discountSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="0">🔍 Incluir Precios Bug sin Descuento (ej. < $500)</option>
-            <option value="30" selected>Desde 30% OFF</option>
+            <option value="20">Desde 20% OFF</option>
+            <option value="35" selected>Desde 35% OFF (Recomendado)</option>
             <option value="50">Desde 50% OFF (Liquidaciones)</option>
             <option value="70">Solo Gangas Extremas (70%+)</option>
           </select>
@@ -49,13 +49,13 @@
         <!-- Categoría opcional -->
         <div>
           <label class="block text-xs font-bold text-neutral-400 mb-1">PALABRA / CATEGORÍA (Opcional)</label>
-          <input id="catInput" type="text" placeholder="Ej: carne, chorizo, café, herramientas..." 
+          <input id="catInput" type="text" placeholder="Ej: barra de sonido, cafe, herramientas..." 
                  class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 text-sm">
         </div>
       </div>
 
       <button id="scanBtn" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-base shadow-lg shadow-red-950/50 cursor-pointer">
-        <span>⚡</span> Rastrear Oportunidades y Precios Bug
+        <span>⚡</span> Auditar y Rastrear Ofertas
       </button>
     </div>
 
@@ -82,7 +82,7 @@
       statusDiv.innerHTML = `
         <div class="inline-flex items-center gap-2 text-neutral-300">
           <svg class="animate-spin h-5 w-5 text-red-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Escaneando catálogo oficial de <b>${store.toUpperCase()}</b> buscando precios irrisorios...
+          Consultando <b>${store.toUpperCase()}</b> y auditando precios contra el mercado...
         </div>
       `;
       statusDiv.classList.remove("hidden");
@@ -94,14 +94,17 @@
         const data = await res.json();
 
         if (!data || data.length === 0) {
-          statusDiv.innerHTML = `❌ No se encontraron ofertas que cumplan el criterio en este momento. Probá seleccionando otra plataforma o dejando el filtro en "Incluir Precios Bug sin Descuento".`;
+          statusDiv.innerHTML = `❌ No se encontraron ofertas que cumplan el criterio en este momento. Probá bajando el filtro a 20% o cambiando de plataforma.`;
           return;
         }
 
-        const bugCount = data.filter(d => d.isBug).length;
+        const realCount = data.filter(d => d.verdict === "REAL").length;
+        const fakeCount = data.filter(d => d.verdict === "INFLADO").length;
+
         statusDiv.innerHTML = `
-          Se detectaron <b class="text-white">${data.length}</b> oportunidades 
-          ${bugCount > 0 ? `<span class="bg-red-950 border border-red-700 text-red-400 px-2 py-0.5 rounded ml-2 font-bold">🚨 ${bugCount} PRECIOS BUG / LIQUIDACIÓN</span>` : ''}
+          Analizados <b class="text-white">${data.length}</b> productos:
+          <span class="text-emerald-400 font-bold ml-2">🟢 ${realCount} Reales comprobados</span>
+          ${fakeCount > 0 ? `<span class="text-red-400 font-bold ml-2">🔴 ${fakeCount} Precios inflados</span>` : ''}
         `;
 
         resultsDiv.innerHTML = data.map(item => {
@@ -110,39 +113,39 @@
               <div class="bg-neutral-900 border border-neutral-700 rounded-2xl p-5 flex flex-col justify-between">
                 <div>
                   <span class="text-xs font-black uppercase px-2 py-1 rounded bg-neutral-800 text-neutral-300">${item.tienda}</span>
-                  <h3 class="font-bold text-base mt-2 mb-3">${item.nombre}</h3>
-                  <p class="text-xs text-neutral-400 mb-4">Coto requiere acceso directo para no bloquear la conexión.</p>
+                  <h3 class="font-bold text-base mt-2 mb-2">${item.nombre}</h3>
+                  <p class="text-xs text-neutral-400 mb-4">${item.desc}</p>
                 </div>
                 <a href="${item.url}" target="_blank" class="block w-full text-center bg-red-600 hover:bg-red-500 py-2.5 rounded-xl text-xs font-black text-white transition">
-                  Abrir Sección de Ofertas en Coto ↗
+                  Abrir Sección en ${item.tienda} ↗
                 </a>
               </div>
             `;
           }
 
+          const isFake = item.verdict === "INFLADO";
+          const isReal = item.verdict === "REAL";
+
           return `
-            <div class="bg-neutral-900 border ${item.isBug ? 'border-red-600 shadow-xl shadow-red-950/50' : 'border-neutral-800'} rounded-2xl p-5 flex flex-col justify-between hover:border-neutral-700 transition">
+            <div class="bg-neutral-900 border ${isReal ? 'border-emerald-600 shadow-lg shadow-emerald-950/40' : isFake ? 'border-red-600' : 'border-neutral-800'} rounded-2xl p-5 flex flex-col justify-between transition">
               <div>
                 <div class="flex justify-between items-center mb-3">
                   <span class="text-xs font-black uppercase tracking-wider px-2 py-1 rounded bg-neutral-800 text-neutral-300">
                     ${item.tienda}
                   </span>
-                  ${item.descuento > 0 ? `
-                    <span class="${item.isBug ? 'bg-red-600 text-white animate-pulse' : 'bg-orange-600 text-white'} text-xs font-black px-2.5 py-1 rounded-md">
-                      -${item.descuento}% OFF
-                    </span>
-                  ` : `
-                    <span class="bg-red-700 text-white text-xs font-black px-2 py-0.5 rounded">
-                      PRECIO ANORMAL
-                    </span>
-                  `}
+                  <span class="bg-neutral-800 text-neutral-300 text-xs font-black px-2.5 py-1 rounded-md">
+                    -${item.descuentoTienda}% según tienda
+                  </span>
                 </div>
 
-                ${item.isBug ? `
-                  <div class="bg-red-950/70 border border-red-800 text-red-300 text-xs font-bold px-2 py-1 rounded mb-3 flex items-center gap-1.5">
-                    <span>🚨</span> Posible Error de Carga / Precio Irrisorio
+                <div class="mb-3">
+                  <span class="text-xs ${item.verdictColor}">
+                    ${item.verdictLabel}
+                  </span>
+                  <div class="text-[11px] text-neutral-400 mt-0.5">
+                    ${item.marketInfo}
                   </div>
-                ` : ''}
+                </div>
 
                 <a href="${item.url}" target="_blank" class="font-bold text-sm text-neutral-100 line-clamp-2 hover:text-red-400 transition mb-4" title="${item.nombre}">
                   ${item.nombre}
@@ -156,7 +159,7 @@
                 </div>
 
                 <a href="${item.url}" target="_blank" class="block w-full text-center bg-neutral-800 hover:bg-neutral-700 py-2 rounded-xl text-xs font-bold text-white transition">
-                  Ver Oferta ↗
+                  Ver en ${item.tienda} ↗
                 </a>
               </div>
             </div>
