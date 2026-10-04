@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Radar de Precios y Oportunidades</title>
+  <title>Radar de Ofertas y Precios Bug</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans antialiased">
@@ -12,17 +12,17 @@
     <header class="text-center mb-8 pt-2">
       <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-semibold uppercase px-3.5 py-1.5 rounded-full mb-3 shadow-sm">
         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        Radar de Precios y Liquidaciones
+        Radar de Liquidaciones Ordenado por Mayor Descuento
       </div>
       <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-2">
-        Auditor de Oportunidades
+        Cazador de Precios Bug y Gangas
       </h1>
       <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
-        Buscá en cada cadena por separado o rastreá tiendas locales y pymes simultáneamente.
+        Rastrea las mayores rebajas reales primero (bugs, 70%+, 60%+) sin desorden de catálogo.
       </p>
     </header>
 
-    <!-- Panel de Búsqueda -->
+    <!-- Panel de Control -->
     <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 md:p-6 mb-8 max-w-4xl mx-auto shadow-lg backdrop-blur-sm">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <!-- Plataforma -->
@@ -30,40 +30,40 @@
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Plataforma</label>
           <select id="storeSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
             <option value="carrefour" selected>🔵 Carrefour (Individual)</option>
-            <option value="dia">🔴 Día Online (Individual)</option>
+            <option value="dia">🔴 Supermercados Día (Individual)</option>
             <option value="easy">🟠 Easy (Individual)</option>
-            <option value="locales">🏪 Tiendas Locales & Pymes (Bidcom, Cetrogar, Megatone, Naldo)</option>
+            <option value="locales">🏪 Tiendas Locales (Bidcom, Cetrogar, Megatone, Naldo)</option>
           </select>
         </div>
 
-        <!-- Término de búsqueda -->
+        <!-- Producto opcional -->
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Producto (Opcional)</label>
-          <input id="qInput" type="text" placeholder="Ej: taladro, cafe, celular, fideos..." 
+          <input id="qInput" type="text" placeholder="Ej: taladro, cafe, fideos, celular..." 
                  class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white placeholder-slate-400 text-sm outline-none focus:border-indigo-500 font-medium">
         </div>
 
-        <!-- Filtro de descuento -->
+        <!-- Descuento mínimo -->
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Filtro de Descuento</label>
           <select id="discountSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
-            <option value="0" selected>Ver Todo (Liquidaciones y Promos)</option>
-            <option value="20">Desde 20% OFF</option>
-            <option value="40">Desde 40% OFF</option>
-            <option value="60">Solo 60%+ OFF</option>
+            <option value="0" selected>⚡ Ver Todo (Mayores Descuentos Primero)</option>
+            <option value="30">Desde 30% OFF</option>
+            <option value="50">Desde 50% OFF (Liquidaciones)</option>
+            <option value="65">Solo Gangas y Bugs (65%+)</option>
           </select>
         </div>
       </div>
 
       <button id="searchBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition duration-150 flex items-center justify-center gap-2 text-sm shadow cursor-pointer">
-        Buscar Oportunidades
+        Rastrear y Ordenar por Mayor Oportunidad
       </button>
     </div>
 
     <!-- Indicador de estado -->
     <div id="status" class="text-center text-slate-300 my-6 hidden"></div>
 
-    <!-- Grilla de Resultados -->
+    <!-- Resultados -->
     <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
   </div>
 
@@ -83,7 +83,7 @@
       statusDiv.innerHTML = `
         <div class="inline-flex items-center gap-2.5 bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-slate-200 text-sm">
           <svg class="animate-spin h-4 w-4 text-indigo-400" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Consultando ofertas...
+          Extrayendo catálogo y ordenando por mayor descuento...
         </div>
       `;
       statusDiv.classList.remove("hidden");
@@ -97,72 +97,72 @@
         if (!data || data.length === 0) {
           statusDiv.innerHTML = `
             <div class="bg-slate-800 border border-slate-700 text-slate-300 px-4 py-3 rounded-xl inline-block text-sm">
-              No se encontraron ofertas con ese criterio. Probá con otra búsqueda o seleccionando otra tienda.
+              No se encontraron ofertas con ese criterio. Prueba con otra palabra clave o bajando el filtro de descuento.
             </div>
           `;
           return;
         }
 
+        const bugCount = data.filter(d => d.isBug).length;
+
         statusDiv.innerHTML = `
-          <div class="text-xs md:text-sm text-slate-300">
-            Se encontraron <b class="text-white">${data.length}</b> productos (ordenados de menor a mayor precio):
+          <div class="text-xs md:text-sm text-slate-300 flex items-center justify-center gap-3 flex-wrap">
+            <span>Encontrados: <b class="text-white">${data.length}</b> productos</span>
+            ${bugCount > 0 ? `<span class="bg-rose-950/80 border border-rose-500/50 text-rose-300 px-2.5 py-0.5 rounded-full font-bold">🚨 ${bugCount} BUGS / LIQUIDACIONES ARRIBA</span>` : ''}
+            <span class="text-emerald-400 font-semibold">Ordenados de mayor a menor descuento</span>
           </div>
         `;
 
-        resultsDiv.innerHTML = data.map((item, idx) => {
-          const isCheapest = idx === 0;
-
-          return `
-            <div class="bg-slate-800/90 border ${isCheapest ? 'border-emerald-500/80 shadow-lg shadow-emerald-950/20' : item.isBug ? 'border-rose-500/80' : 'border-slate-700'} rounded-2xl p-5 flex flex-col justify-between hover:border-slate-500 transition">
-              <div>
-                <div class="flex justify-between items-center mb-3">
-                  <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300">
-                    ${item.tienda}
+        resultsDiv.innerHTML = data.map((item, idx) => `
+          <div class="bg-slate-800/90 border ${item.isBug ? 'border-rose-500/80 shadow-lg shadow-rose-950/30' : idx < 3 ? 'border-indigo-500/60 shadow-md shadow-indigo-950/20' : 'border-slate-700'} rounded-2xl p-5 flex flex-col justify-between hover:border-slate-500 transition">
+            <div>
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300">
+                  ${item.tienda}
+                </span>
+                ${item.descuento > 0 ? `
+                  <span class="text-xs font-black px-2.5 py-1 rounded-md ${item.descuento >= 60 ? 'bg-rose-600 text-white animate-pulse' : 'bg-indigo-600 text-white'}">
+                    -${item.descuento}% OFF
                   </span>
-                  ${item.descuento > 0 ? `
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-900 text-slate-300">
-                      -${item.descuento}%
-                    </span>
-                  ` : ''}
-                </div>
-
-                ${item.isBug ? `
-                  <div class="mb-2">
-                    <span class="text-[11px] font-bold bg-rose-950/60 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded">
-                      🚨 PRECIO GANGA / POSIBLE BUG
-                    </span>
-                  </div>
                 ` : ''}
-
-                <a href="${item.url}" target="_blank" class="font-semibold text-sm text-slate-100 hover:text-indigo-400 transition line-clamp-2 mb-4" title="${item.nombre}">
-                  ${item.nombre}
-                </a>
               </div>
 
-              <div class="pt-3 border-t border-slate-700/80">
-                <div class="flex items-baseline gap-2 mb-3.5">
-                  <span class="text-2xl font-black text-emerald-400">
-                    $ ${item.precio.toLocaleString("es-AR")}
+              ${item.isBug ? `
+                <div class="mb-2">
+                  <span class="text-[11px] font-bold bg-rose-950/60 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded">
+                    🚨 PRECIO BUG / LIQUIDACIÓN
                   </span>
-                  ${item.precioLista ? `
-                    <span class="text-xs text-slate-400 line-through">
-                      $ ${item.precioLista.toLocaleString("es-AR")}
-                    </span>
-                  ` : ''}
                 </div>
+              ` : ''}
 
-                <a href="${item.url}" target="_blank" class="block w-full text-center bg-slate-900 hover:bg-slate-700 border border-slate-600 py-2.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition">
-                  Ver Oferta ↗
-                </a>
-              </div>
+              <a href="${item.url}" target="_blank" class="font-semibold text-sm text-slate-100 hover:text-indigo-400 transition line-clamp-2 mb-4" title="${item.nombre}">
+                ${item.nombre}
+              </a>
             </div>
-          `;
-        }).join("");
+
+            <div class="pt-3 border-t border-slate-700/80">
+              <div class="flex items-baseline gap-2 mb-3.5">
+                <span class="text-2xl font-black text-emerald-400">
+                  $ ${item.precio.toLocaleString("es-AR")}
+                </span>
+                ${item.precioLista ? `
+                  <span class="text-xs text-slate-400 line-through">
+                    $ ${item.precioLista.toLocaleString("es-AR")}
+                  </span>
+                ` : ''}
+              </div>
+
+              <a href="${item.url}" target="_blank" class="block w-full text-center bg-slate-900 hover:bg-slate-700 border border-slate-600 py-2.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition">
+                Ver Oferta en ${item.tienda} ↗
+              </a>
+            </div>
+          </div>
+        `).join("");
 
       } catch (err) {
         statusDiv.innerHTML = `
           <div class="bg-rose-900/60 border border-rose-500/40 text-rose-300 px-4 py-2.5 rounded-xl inline-block text-sm">
-            Error en la consulta. Intenta nuevamente.
+            Error al consultar el catálogo. Intenta nuevamente.
           </div>
         `;
       } finally {
