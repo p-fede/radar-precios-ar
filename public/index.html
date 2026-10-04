@@ -3,122 +3,229 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detector Argentina — Oportunidades y Precios Bug</title>
+  <title>Detector Pro — Rastreador de Ofertas y Precios Bug en +100 Tiendas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes pulseGlow {
       0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
-      50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.8); }
+      50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
     }
-    .bug-glow {
+    .bug-card {
       animation: pulseGlow 2s infinite ease-in-out;
     }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- Navbar superior minimalista -->
+  <!-- Header Superior -->
   <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <span class="text-2xl">⚡</span>
         <div>
-          <span class="font-black text-xl tracking-tight text-white">DETECTOR<span class="text-indigo-400">.AR</span></span>
-          <span class="text-[10px] uppercase font-bold tracking-widest bg-indigo-950 border border-indigo-700/50 text-indigo-300 px-2 py-0.5 rounded-full ml-2">PRO</span>
+          <span class="font-black text-xl tracking-tight text-white">RADAR<span class="text-indigo-400">.AR</span></span>
+          <span class="text-[10px] uppercase font-bold tracking-widest bg-emerald-950 border border-emerald-700/60 text-emerald-300 px-2 py-0.5 rounded-full ml-2">106+ TIENDAS</span>
         </div>
       </div>
-      <div id="statsBar" class="hidden md:flex items-center gap-6 text-xs text-slate-400">
-        <div>Total: <b id="statTotal" class="text-white">0</b></div>
-        <div>Bugs: <b id="statBugs" class="text-rose-400">0</b></div>
-        <div>Máx Descuento: <b id="statMaxDisc" class="text-emerald-400">0%</b></div>
+      <div id="statsBar" class="hidden md:flex items-center gap-6 text-xs text-slate-400 font-medium">
+        <div>Tiendas: <b id="statStores" class="text-white">106</b></div>
+        <div>Detectados: <b id="statTotal" class="text-white">0</b></div>
+        <div>Bugs Activos: <b id="statBugs" class="text-rose-400">0</b></div>
+        <div>Máx Descuento: <b id="statMax" class="text-emerald-400">0%</b></div>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-8">
     
-    <!-- Hero / Presentación -->
+    <!-- Hero -->
     <div class="text-center max-w-3xl mx-auto mb-8">
-      <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-3">
-        Radar de Liquidaciones en Vivo
+      <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight mb-3">
+        Radar de Ofertas y Precios Bug
       </h1>
       <p class="text-slate-400 text-sm md:text-base">
-        Rastreá ofertas reales, chollos y errores de precio en las principales tiendas y supermercados de Argentina.
+        Rastreá liquidaciones extremas, errores de carga y promociones reales en más de 100 tiendas y marcas de Argentina.
       </p>
     </div>
 
-    <!-- Barra de Búsqueda y Filtros Rápidos -->
+    <!-- Panel de Filtros -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 mb-6 shadow-xl">
+      
+      <!-- Fila 1: Búsqueda libre, Tienda directa y Descuento -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
         <div class="md:col-span-2">
-          <input id="qInput" type="text" placeholder="Buscar producto (ej: café, taladro, celular, fideos...)" 
+          <input id="qInput" type="text" placeholder="¿Qué buscás? (ej: zapatillas, taladro, celular, café, smart tv...)" 
                  class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm outline-none focus:border-indigo-500 font-medium">
         </div>
+        
+        <!-- Selector desplegable de más de 100 tiendas directas -->
         <div>
-          <select id="discountSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-indigo-500 font-medium cursor-pointer">
-            <option value="0" selected>⚡ Todos los Descuentos</option>
-            <option value="30">Desde 30% OFF</option>
-            <option value="50">Desde 50% OFF (Liquidaciones)</option>
-            <option value="65">Solo Gangas y Bugs (65%+)</option>
+          <select id="storeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-indigo-500 font-medium cursor-pointer">
+            <option value="todas" selected>🌐 Todas las Tiendas</option>
+            <optgroup label="Supermercados">
+              <option value="carrefour">Carrefour</option>
+              <option value="dia">Día Online</option>
+              <option value="jumbo">Jumbo</option>
+              <option value="disco">Disco</option>
+              <option value="vea">Vea</option>
+              <option value="changomas">ChangoMás</option>
+            </optgroup>
+            <optgroup label="Tecnología, Gaming y Celulares">
+              <option value="mercadolibre">MercadoLibre</option>
+              <option value="cetrogar">Cetrogar</option>
+              <option value="megatone">Megatone</option>
+              <option value="musimundo">Musimundo</option>
+              <option value="naldo">Naldo</option>
+              <option value="bidcom">Bidcom</option>
+              <option value="sony">Sony Store</option>
+              <option value="motorola">Motorola</option>
+              <option value="samsung">Samsung</option>
+              <option value="lenovo">Lenovo</option>
+              <option value="start">Start_</option>
+              <option value="venex">Venex</option>
+              <option value="mexx">Mexx</option>
+              <option value="maximus">Maximus Gaming</option>
+              <option value="fullh4rd">Full H4rd</option>
+              <option value="libreopcion">LibreOpción</option>
+            </optgroup>
+            <optgroup label="Herramientas y Construcción">
+              <option value="easy">Easy</option>
+              <option value="sodimac">Sodimac</option>
+              <option value="blaisten">Blaisten</option>
+              <option value="bercomat">Familia Bercomat</option>
+              <option value="prestigio">Pinturerías Prestigio</option>
+              <option value="rex">Pinturerías Rex</option>
+              <option value="lusqtoff">Lüsqtoff</option>
+              <option value="gamma">Gamma Herramientas</option>
+            </optgroup>
+            <optgroup label="Electrodomésticos y Hogar">
+              <option value="whirlpool">Whirlpool</option>
+              <option value="drean">Drean</option>
+              <option value="longvie">Longvie</option>
+              <option value="bgh">BGH</option>
+              <option value="philips">Philips</option>
+              <option value="electrolux">Electrolux</option>
+              <option value="peabody">Peabody</option>
+              <option value="liliana">Liliana</option>
+              <option value="yelmo">Yelmo</option>
+              <option value="sommiercenter">SommierCenter</option>
+              <option value="cardeuse">La Cardeuse</option>
+              <option value="simmons">Simmons</option>
+              <option value="arredo">Arredo</option>
+              <option value="morph">Morph</option>
+              <option value="colombraro">Colombraro</option>
+            </optgroup>
+            <optgroup label="Deportes y Zapatillas">
+              <option value="adidas">Adidas</option>
+              <option value="nike">Nike</option>
+              <option value="puma">Puma</option>
+              <option value="topper">Topper</option>
+              <option value="dexter">Dexter</option>
+              <option value="stockcenter">Stock Center</option>
+              <option value="moov">Moov</option>
+              <option value="solodeportes">Solo Deportes</option>
+              <option value="opensports">Open Sports</option>
+              <option value="sportline">Sportline</option>
+              <option value="dash">Dash</option>
+              <option value="grid">Grid</option>
+              <option value="montagne">Montagne</option>
+              <option value="scandinavian">Scandinavian</option>
+              <option value="cristobalcolon">Cristóbal Colón</option>
+            </optgroup>
+            <optgroup label="Moda y Calzado">
+              <option value="levis">Levi's</option>
+              <option value="lacoste">Lacoste</option>
+              <option value="dafiti">Dafiti</option>
+              <option value="bowen">Bowen</option>
+              <option value="kevingston">Kevingston</option>
+            </optgroup>
+            <optgroup label="Farmacia y Perfumería">
+              <option value="farmacity">Farmacity</option>
+              <option value="centraloeste">Central Oeste</option>
+              <option value="delpuente">Farmacias del Puente</option>
+              <option value="pedidosfarma">PedidosFarma</option>
+              <option value="pigmento">Pigmento</option>
+              <option value="julieriaque">Juleriaque</option>
+              <option value="rouge">Rouge</option>
+              <option value="parfumerie">Parfumerie</option>
+              <option value="simplicity">Simplicity</option>
+              <option value="natura">Natura</option>
+            </optgroup>
+            <optgroup label="Librerías y Juguetes">
+              <option value="cuspide">Cúspide</option>
+              <option value="yenny">Yenny / El Ateneo</option>
+              <option value="citykids">CityKids</option>
+              <option value="creciendo">Creciendo</option>
+              <option value="carrousel">Carrousel</option>
+              <option value="staples">Staples</option>
+            </optgroup>
           </select>
         </div>
+
         <div>
           <button id="searchBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3 rounded-xl transition duration-150 flex items-center justify-center gap-2 text-sm shadow cursor-pointer">
-            <span>🔍</span> Explorar
+            <span>⚡</span> Rastrear Ofertas
           </button>
         </div>
       </div>
 
-      <!-- Store Tabs (Pestañas de tiendas como en Detector) -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none text-xs" id="storeTabs">
-        <button data-store="todas" class="tab-btn px-3 py-1.5 rounded-lg font-bold bg-indigo-600 text-white whitespace-nowrap">🔥 Todas las Tiendas</button>
-        <button data-store="carrefour" class="tab-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🔵 Carrefour</button>
-        <button data-store="dia" class="tab-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🔴 Día Online</button>
-        <button data-store="easy" class="tab-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🟠 Easy</button>
-        <button data-store="mercadolibre" class="tab-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🟡 MercadoLibre</button>
-        <button data-store="cetrogar" class="tab-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🟣 Cetrogar</button>
-        <button data-store="megatone" class="tab-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🔴 Megatone</button>
-        <button data-store="bidcom" class="tab-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🟢 Bidcom</button>
-        <button data-store="naldo" class="tab-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🔵 Naldo</button>
+      <!-- Fila 2: Pestañas de Rubros Rápidos -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs border-t border-slate-800/80 pt-3" id="rubroTabs">
+        <button data-rubro="todos" class="rubro-btn px-3 py-1.5 rounded-lg font-bold bg-indigo-600 text-white whitespace-nowrap">🔥 Todos los Rubros</button>
+        <button data-rubro="supermercados" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🛒 Supermercados</button>
+        <button data-rubro="tecnologia" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">💻 Tecno & Celulares</button>
+        <button data-rubro="herramientas" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🔧 Herramientas</button>
+        <button data-rubro="electro" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🔌 Electro & Clima</button>
+        <button data-rubro="deportes" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">👟 Deportes & Zapas</button>
+        <button data-rubro="hogar" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🛋️ Hogar & Muebles</button>
+        <button data-rubro="farmacia" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">💄 Farmacia & Belleza</button>
       </div>
     </div>
 
-    <!-- Indicador de estado -->
+    <!-- Indicador de Estado -->
     <div id="status" class="text-center text-slate-400 my-8 hidden"></div>
 
-    <!-- Grilla de Productos estilo Detector -->
+    <!-- Grilla de Resultados -->
     <div id="results" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5"></div>
   </main>
 
   <script>
-    let activeStore = "todas";
+    let activeRubro = "todos";
     const searchBtn = document.getElementById("searchBtn");
     const qInput = document.getElementById("qInput");
-    const discountSelect = document.getElementById("discountSelect");
+    const storeSelect = document.getElementById("storeSelect");
     const statusDiv = document.getElementById("status");
     const resultsDiv = document.getElementById("results");
-    const storeTabs = document.getElementById("storeTabs");
+    const rubroTabs = document.getElementById("rubroTabs");
 
-    // Manejo de pestañas de tiendas
-    storeTabs.querySelectorAll(".tab-btn").forEach(btn => {
+    // Click en Rubros
+    rubroTabs.querySelectorAll(".rubro-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        storeTabs.querySelectorAll(".tab-btn").forEach(b => {
-          b.className = "tab-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap";
+        rubroTabs.querySelectorAll(".rubro-btn").forEach(b => {
+          b.className = "rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap";
         });
-        btn.className = "tab-btn px-3 py-1.5 rounded-lg font-bold bg-indigo-600 text-white whitespace-nowrap";
-        activeStore = btn.dataset.store;
-        ejecutarBusqueda();
+        btn.className = "rubro-btn px-3 py-1.5 rounded-lg font-bold bg-indigo-600 text-white whitespace-nowrap";
+        activeRubro = btn.dataset.rubro;
+        storeSelect.value = "todas"; // restablecer a todas dentro de ese rubro
+        ejecutar();
       });
     });
 
-    async function ejecutarBusqueda() {
+    // Cambio en selector directo de tienda
+    storeSelect.addEventListener("change", () => {
+      ejecutar();
+    });
+
+    async function ejecutar() {
       const q = qInput.value.trim();
-      const minDiscount = discountSelect.value;
+      const store = storeSelect.value;
 
       statusDiv.innerHTML = `
-        <div class="inline-flex items-center gap-2.5 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-slate-200 text-sm">
+        <div class="inline-flex items-center gap-2.5 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-slate-200 text-sm shadow">
           <svg class="animate-spin h-4 w-4 text-indigo-400" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Extrayendo catálogo y fotografías en alta definición...
+          Escaneando catálogos de tiendas y fotos en HD...
         </div>
       `;
       statusDiv.classList.remove("hidden");
@@ -126,13 +233,14 @@
       searchBtn.disabled = true;
 
       try {
-        const res = await fetch(`/api/search?store=${activeStore}&q=${encodeURIComponent(q)}&minDiscount=${minDiscount}`);
-        const data = await res.json();
+        const res = await fetch(`/api/search?store=${store}&rubro=${activeRubro}&q=${encodeURIComponent(q)}`);
+        const json = await res.json();
+        const data = json.results || [];
 
         if (!data || data.length === 0) {
           statusDiv.innerHTML = `
             <div class="bg-slate-900 border border-slate-800 text-slate-300 px-5 py-3 rounded-xl inline-block text-sm">
-              No se detectaron productos bajo este criterio. Prueba con una palabra más amplia o cambiando de tienda.
+              No se detectaron ofertas en este rubro o término. Probá con otra búsqueda o seleccionando otra tienda.
             </div>
           `;
           return;
@@ -140,27 +248,25 @@
 
         statusDiv.classList.add("hidden");
 
-        // Actualizar estadísticas del Header
+        // Actualizar Estadísticas
         const bugCount = data.filter(d => d.isBug).length;
         const maxDisc = Math.max(...data.map(d => d.descuento || 0));
         document.getElementById("statTotal").textContent = data.length;
         document.getElementById("statBugs").textContent = bugCount;
-        document.getElementById("statMaxDisc").textContent = `-${maxDisc}%`;
+        document.getElementById("statMax").textContent = `-${maxDisc}%`;
 
-        // Renderizado de tarjetas con fotografías y badges
+        // Renderizado
         resultsDiv.innerHTML = data.map(item => `
-          <div class="bg-slate-900 border ${item.isBug ? 'border-rose-500 bug-glow' : 'border-slate-800'} rounded-2xl overflow-hidden flex flex-col justify-between hover:border-slate-600 transition group shadow-md">
+          <div class="bg-slate-900 border ${item.isBug ? 'border-rose-500 bug-card' : 'border-slate-800'} rounded-2xl overflow-hidden flex flex-col justify-between hover:border-slate-600 transition group shadow-lg">
             
-            <!-- Contenedor de Imagen -->
+            <!-- Imagen -->
             <div class="relative bg-white p-4 h-48 md:h-56 flex items-center justify-center overflow-hidden">
               <img src="${item.img}" alt="${item.nombre}" loading="lazy" class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-300">
               
-              <!-- Badge de Tienda -->
               <span class="absolute top-2.5 left-2.5 bg-slate-900/90 backdrop-blur text-slate-200 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow">
                 ${item.tienda}
               </span>
 
-              <!-- Badge de Descuento -->
               ${item.descuento > 0 ? `
                 <span class="absolute top-2.5 right-2.5 ${item.isBug ? 'bg-rose-600' : 'bg-emerald-600'} text-white text-xs font-black px-2 py-0.5 rounded-md shadow">
                   -${item.descuento}%
@@ -168,7 +274,7 @@
               ` : ''}
             </div>
 
-            <!-- Información del Producto -->
+            <!-- Ficha -->
             <div class="p-4 flex flex-col justify-between flex-1">
               <div>
                 ${item.isBug ? `
@@ -184,7 +290,6 @@
                 </a>
               </div>
 
-              <!-- Precios y Botón -->
               <div class="pt-3 border-t border-slate-800/80">
                 <div class="flex items-baseline gap-2 mb-1">
                   <span class="text-lg md:text-xl font-black text-emerald-400">
@@ -204,7 +309,7 @@
                 ` : '<div class="h-4 mb-3"></div>'}
 
                 <a href="${item.url}" target="_blank" class="block w-full text-center bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 text-slate-200 hover:text-white py-2 rounded-xl text-xs font-bold transition">
-                  Ver en Tienda ↗
+                  Ver Oferta ↗
                 </a>
               </div>
             </div>
@@ -223,11 +328,11 @@
       }
     }
 
-    searchBtn.addEventListener("click", ejecutarBusqueda);
-    qInput.addEventListener("keypress", (e) => { if (e.key === "Enter") ejecutarBusqueda(); });
+    searchBtn.addEventListener("click", ejecutar);
+    qInput.addEventListener("keypress", (e) => { if (e.key === "Enter") ejecutar(); });
 
-    // Carga inicial automática
-    ejecutarBusqueda();
+    // Inicio automático
+    ejecutar();
   </script>
 </body>
 </html>
