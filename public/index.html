@@ -11,10 +11,10 @@
     <!-- Header -->
     <header class="text-center mb-8">
       <div class="inline-block bg-red-950 border border-red-800 text-red-400 text-xs font-black uppercase px-3 py-1 rounded-full mb-3 tracking-widest animate-pulse">
-        🛡️ AUDITOR ANTIESTAFA & RADAR DE PRECIOS BUG
+        🛡️ AUDITOR DE OFERTAS & COMPARADOR CRUZADO
       </div>
-      <h1 class="text-3xl md:text-5xl font-black text-white mb-2">Cazador de Ofertas Reales</h1>
-      <p class="text-neutral-400 text-sm md:text-base">Detecta si el descuento es auténtico o si inflaron el precio tachado</p>
+      <h1 class="text-3xl md:text-5xl font-black text-white mb-2">Cazador de Precios Reales</h1>
+      <p class="text-neutral-400 text-sm md:text-base">Contrasta cada oferta contra el mercado en tiempo real para descartar precios inflados</p>
     </header>
 
     <!-- Panel de Control y Filtros -->
@@ -24,14 +24,14 @@
         <div>
           <label class="block text-xs font-bold text-neutral-400 mb-1">PLATAFORMA</label>
           <select id="storeSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="carrefour" selected>🔵 Carrefour (Auditado)</option>
-            <option value="dia">🔴 Supermercados Día (Bugs y 2x1)</option>
+            <option value="carrefour">🔵 Carrefour (Auditado)</option>
+            <option value="dia">🔴 Supermercados Día</option>
             <option value="easy">🟠 Easy (Herramientas / Hogar)</option>
             <option value="fravega">🟣 Frávega (Tecno / Electro)</option>
-            <option value="mercadolibre">🟡 MercadoLibre (Ofertas)</option>
-            <option value="coto">🔴 Coto Digital (Acceso Directo)</option>
+            <option value="mercadolibre">🟡 MercadoLibre (General)</option>
+            <option value="coto">🔴 Coto Digital (Catálogo)</option>
             <option value="pedidosya">🔴 PedidosYa (Markets)</option>
-            <option value="rappi">🟠 Rappi (Turbo)</option>
+            <option value="rappi">🟠 Rappi (Turbo / Super)</option>
           </select>
         </div>
 
@@ -39,17 +39,17 @@
         <div>
           <label class="block text-xs font-bold text-neutral-400 mb-1">FILTRO DE OFERTA</label>
           <select id="discountSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="20">Desde 20% OFF</option>
-            <option value="35" selected>Desde 35% OFF (Recomendado)</option>
-            <option value="50">Desde 50% OFF (Liquidaciones)</option>
-            <option value="70">Solo Gangas Extremas (70%+)</option>
+            <option value="0">Ver Todo / Sin Filtro Mínimo</option>
+            <option value="20" selected>Desde 20% OFF</option>
+            <option value="40">Desde 40% OFF (Liquidaciones)</option>
+            <option value="60">Solo Gangas Extremas (60%+)</option>
           </select>
         </div>
 
-        <!-- Categoría opcional -->
+        <!-- Categoría opcional con recordatorio de contexto -->
         <div>
-          <label class="block text-xs font-bold text-neutral-400 mb-1">PALABRA / CATEGORÍA (Opcional)</label>
-          <input id="catInput" type="text" placeholder="Ej: barra de sonido, cafe, herramientas..." 
+          <label class="block text-xs font-bold text-neutral-400 mb-1">PALABRA / CATEGORÍA</label>
+          <input id="catInput" type="text" placeholder="Ej: taladro, heladera, cafe, galletitas..." 
                  class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 text-sm">
         </div>
       </div>
@@ -82,7 +82,7 @@
       statusDiv.innerHTML = `
         <div class="inline-flex items-center gap-2 text-neutral-300">
           <svg class="animate-spin h-5 w-5 text-red-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Consultando <b>${store.toUpperCase()}</b> y auditando precios contra el mercado...
+          Extrayendo catálogo de <b>${store.toUpperCase()}</b> y contrastando con precios de referencia...
         </div>
       `;
       statusDiv.classList.remove("hidden");
@@ -94,7 +94,7 @@
         const data = await res.json();
 
         if (!data || data.length === 0) {
-          statusDiv.innerHTML = `❌ No se encontraron ofertas que cumplan el criterio en este momento. Probá bajando el filtro a 20% o cambiando de plataforma.`;
+          statusDiv.innerHTML = `❌ No se encontraron productos para esta búsqueda. Recuerda que en PedidosYa/Rappi debes buscar alimentos/almacén y en Frávega artículos de electro/tecno.`;
           return;
         }
 
@@ -108,21 +108,6 @@
         `;
 
         resultsDiv.innerHTML = data.map(item => {
-          if (item.isDirectLink) {
-            return `
-              <div class="bg-neutral-900 border border-neutral-700 rounded-2xl p-5 flex flex-col justify-between">
-                <div>
-                  <span class="text-xs font-black uppercase px-2 py-1 rounded bg-neutral-800 text-neutral-300">${item.tienda}</span>
-                  <h3 class="font-bold text-base mt-2 mb-2">${item.nombre}</h3>
-                  <p class="text-xs text-neutral-400 mb-4">${item.desc}</p>
-                </div>
-                <a href="${item.url}" target="_blank" class="block w-full text-center bg-red-600 hover:bg-red-500 py-2.5 rounded-xl text-xs font-black text-white transition">
-                  Abrir Sección en ${item.tienda} ↗
-                </a>
-              </div>
-            `;
-          }
-
           const isFake = item.verdict === "INFLADO";
           const isReal = item.verdict === "REAL";
 
@@ -133,9 +118,11 @@
                   <span class="text-xs font-black uppercase tracking-wider px-2 py-1 rounded bg-neutral-800 text-neutral-300">
                     ${item.tienda}
                   </span>
-                  <span class="bg-neutral-800 text-neutral-300 text-xs font-black px-2.5 py-1 rounded-md">
-                    -${item.descuentoTienda}% según tienda
-                  </span>
+                  ${item.descuentoTienda > 0 ? `
+                    <span class="bg-neutral-800 text-neutral-300 text-xs font-black px-2.5 py-1 rounded-md">
+                      -${item.descuentoTienda}% según tienda
+                    </span>
+                  ` : ''}
                 </div>
 
                 <div class="mb-3">
