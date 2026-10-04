@@ -3,76 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Buscador de Precios en Tiendas Locales</title>
+  <title>Radar de Precios y Oportunidades</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans antialiased">
   <div class="max-w-6xl mx-auto">
     <!-- Header -->
     <header class="text-center mb-8 pt-2">
-      <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-semibold uppercase px-3 py-1 rounded-full mb-3 shadow-sm">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        Multi-Buscador de Tiendas Locales Argentinas
+      <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-semibold uppercase px-3.5 py-1.5 rounded-full mb-3 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        Radar de Precios y Liquidaciones
       </div>
       <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-2">
-        Radar de Precios Simultáneo
+        Auditor de Oportunidades
       </h1>
       <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
-        Busca al mismo tiempo en Easy, Megatone, Musimundo, Naldo, Cetrogar, Carrefour y Día.
+        Buscá en cada cadena por separado o rastreá tiendas locales y pymes simultáneamente.
       </p>
     </header>
 
-    <!-- Barra de búsqueda y selector -->
+    <!-- Panel de Búsqueda -->
     <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 md:p-6 mb-8 max-w-4xl mx-auto shadow-lg backdrop-blur-sm">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <!-- Input de producto -->
-        <div class="md:col-span-2">
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Producto a buscar</label>
-          <input id="qInput" type="text" placeholder="Ej: taladro bosch, celular samsung, cargador tipo c, pava electrica..." 
+        <!-- Plataforma -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Plataforma</label>
+          <select id="storeSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
+            <option value="carrefour" selected>🔵 Carrefour (Individual)</option>
+            <option value="dia">🔴 Día Online (Individual)</option>
+            <option value="easy">🟠 Easy (Individual)</option>
+            <option value="locales">🏪 Tiendas Locales & Pymes (Bidcom, Cetrogar, Megatone, Naldo)</option>
+          </select>
+        </div>
+
+        <!-- Término de búsqueda -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Producto (Opcional)</label>
+          <input id="qInput" type="text" placeholder="Ej: taladro, cafe, celular, fideos..." 
                  class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white placeholder-slate-400 text-sm outline-none focus:border-indigo-500 font-medium">
         </div>
 
-        <!-- Rubro -->
+        <!-- Filtro de descuento -->
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Rubro / Filtro</label>
-          <select id="catSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
-            <option value="todas" selected>⚡ Buscar en Todas a la Vez</option>
-            <option value="herramientas">Herramientas y Hogar</option>
-            <option value="tecnologia">Tecnología y Celulares</option>
-            <option value="electro">Electrodomésticos</option>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Filtro de Descuento</label>
+          <select id="discountSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
+            <option value="0" selected>Ver Todo (Liquidaciones y Promos)</option>
+            <option value="20">Desde 20% OFF</option>
+            <option value="40">Desde 40% OFF</option>
+            <option value="60">Solo 60%+ OFF</option>
           </select>
         </div>
       </div>
 
       <button id="searchBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition duration-150 flex items-center justify-center gap-2 text-sm shadow cursor-pointer">
-        Consultar Todas las Tiendas Simultáneamente
+        Buscar Oportunidades
       </button>
     </div>
 
-    <!-- Estado -->
+    <!-- Indicador de estado -->
     <div id="status" class="text-center text-slate-300 my-6 hidden"></div>
 
-    <!-- Resultados -->
+    <!-- Grilla de Resultados -->
     <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
   </div>
 
   <script>
     const searchBtn = document.getElementById("searchBtn");
+    const storeSelect = document.getElementById("storeSelect");
     const qInput = document.getElementById("qInput");
-    const catSelect = document.getElementById("catSelect");
+    const discountSelect = document.getElementById("discountSelect");
     const statusDiv = document.getElementById("status");
     const resultsDiv = document.getElementById("results");
 
     async function buscar() {
+      const store = storeSelect.value;
       const q = qInput.value.trim();
-      if (!q) return;
-
-      const cat = catSelect.value;
+      const minDiscount = discountSelect.value;
 
       statusDiv.innerHTML = `
         <div class="inline-flex items-center gap-2.5 bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-slate-200 text-sm">
           <svg class="animate-spin h-4 w-4 text-indigo-400" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Consultando tiendas argentinas en simultáneo...
+          Consultando ofertas...
         </div>
       `;
       statusDiv.classList.remove("hidden");
@@ -80,13 +91,13 @@
       searchBtn.disabled = true;
 
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&category=${cat}`);
+        const res = await fetch(`/api/search?store=${store}&q=${encodeURIComponent(q)}&minDiscount=${minDiscount}`);
         const data = await res.json();
 
         if (!data || data.length === 0) {
           statusDiv.innerHTML = `
             <div class="bg-slate-800 border border-slate-700 text-slate-300 px-4 py-3 rounded-xl inline-block text-sm">
-              No se encontraron coincidencias para "${q}". Prueba con una palabra más genérica.
+              No se encontraron ofertas con ese criterio. Probá con otra búsqueda o seleccionando otra tienda.
             </div>
           `;
           return;
@@ -94,7 +105,7 @@
 
         statusDiv.innerHTML = `
           <div class="text-xs md:text-sm text-slate-300">
-            Se encontraron <b class="text-white">${data.length}</b> opciones en las tiendas (ordenadas de menor a mayor precio):
+            Se encontraron <b class="text-white">${data.length}</b> productos (ordenados de menor a mayor precio):
           </div>
         `;
 
@@ -108,12 +119,8 @@
                   <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300">
                     ${item.tienda}
                   </span>
-                  ${isCheapest ? `
-                    <span class="text-xs font-black bg-emerald-500 text-slate-950 px-2 py-0.5 rounded">
-                      EL MÁS BARATO
-                    </span>
-                  ` : item.descuento > 0 ? `
-                    <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">
+                  ${item.descuento > 0 ? `
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-900 text-slate-300">
                       -${item.descuento}%
                     </span>
                   ` : ''}
@@ -145,7 +152,7 @@
                 </div>
 
                 <a href="${item.url}" target="_blank" class="block w-full text-center bg-slate-900 hover:bg-slate-700 border border-slate-600 py-2.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition">
-                  Comprar en ${item.tienda} ↗
+                  Ver Oferta ↗
                 </a>
               </div>
             </div>
