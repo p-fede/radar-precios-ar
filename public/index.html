@@ -10,15 +10,15 @@
   <div class="max-w-6xl mx-auto">
     <!-- Header -->
     <header class="text-center mb-8 pt-2">
-      <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-semibold uppercase px-3 py-1 rounded-full mb-3 shadow-sm">
+      <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-semibold uppercase px-3.5 py-1.5 rounded-full mb-3 shadow-sm">
         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        Auditor Antiestafa & Radar de Precios
+        Radar de Precios Reales & Auditor Antiestafa
       </div>
       <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-2">
         Cazador de Ofertas Reales
       </h1>
       <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
-        Contrasta rebajas contra el mercado para verificar si una oferta es auténtica o un precio inflado.
+        Detecta liquidaciones auténticas y contrasta rebajas sin bloqueos de servidor.
       </p>
     </header>
 
@@ -81,79 +81,165 @@
 
     async function escanear() {
       const store = storeSelect.value;
-      const minDiscount = discountSelect.value;
+      const minDiscount = parseInt(discountSelect.value, 10) || 0;
       const category = catInput.value.trim();
 
       statusDiv.innerHTML = `
         <div class="inline-flex items-center gap-2.5 bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-slate-200 text-sm">
           <svg class="animate-spin h-4 w-4 text-indigo-400" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Consultando <b>${store.toUpperCase()}</b> y auditando precios...
+          Consultando <b>${store.toUpperCase()}</b> directamente...
         </div>
       `;
       statusDiv.classList.remove("hidden");
       resultsDiv.innerHTML = "";
       scanBtn.disabled = true;
 
+      let data = [];
+
       try {
-        const res = await fetch(`/api/search?store=${store}&minDiscount=${minDiscount}&category=${encodeURIComponent(category)}`);
-        const data = await res.json();
+        // MODO 1: TIENDAS VTEX (Carrefour, Día, Easy) y Frávega vía Backend
+        if (["carrefour", "dia", "easy", "fravega"].includes(store)) {
+          const res = await fetch(`/api/search?store=${store}&minDiscount=${minDiscount}&category=${encodeURIComponent(category)}`);
+          data = await res.json();
+        }
+
+        // MODO 2: MERCADOLIBRE (Directo desde el navegador con tu IP local para evitar baneo en la nube)
+        else if (store === "mercadolibre") {
+          const term = category || "ofertas";
+          const res = await fetch(`https://api.mercadolibre.com/sites/MLA/search?q=${encodeURIComponent(term)}&limit=30`);
+          const json = await res.json();
+          (json.results || []).forEach(p => {
+            const current = Number(p.price || 0);
+            const original = Number(p.original_price || 0);
+            let disc = 0;
+            if (original > current && current > 0) {
+              disc = Math.round(((original - current) / original) * 100);
+            }
+            if (current > 0 && (disc >= minDiscount || minDiscount === 0)) {
+              data.push({
+                tienda: "MercadoLibre",
+                nombre: p.title,
+                precio: current,
+                precioLista: original > current ? original : null,
+                descuentoTienda: disc,
+                url: p.permalink
+              });
+            }
+          });
+        }
+
+        // MODO 3: COTO DIGITAL (Directo desde IP residencial argentina)
+        else if (store === "coto") {
+          const term = category ? encodeURIComponent(category).replace(/%20/g, "+") : "ofertas";
+          const res = await fetch(`https://www.cotodigital3.com.ar/sitios/cdigi/browse?_dyncharset=utf-8&Ntt=${term}`);
+          const html = await res.text();
+          const blocks = html.match(/<li class="clearfix"[\s\S]*?<\/li>/gi) || [];
+          blocks.slice(0, 30).forEach(b => {
+            const titleM = b.match(/<div class="descrip_full">(.*?)<\/div>/i);
+            const priceM = b.match(/<span class="atg_store_newPrice">\s*\$([\d.,]+)/i);
+            const oldM = b.match(/<span class="atg_store_oldPrice">\s*\$([\d.,]+)/i);
+            const linkM = b.match(/href="([^"]*\/sitios\/cdigi\/producto\/[^"]*)"/i);
+
+            if (titleM && priceM) {
+              const current = parseFloat(priceM[1].replace(/\./g, "").replace(",", "."));
+              const original = oldM ? parseFloat(oldM[1].replace(/\./g, "").replace(",", ".")) : 0;
+              let disc = 0;
+              if (original > current && current > 0) {
+                disc = Math.round(((original - current) / original) * 100);
+              }
+              if (current > 0 && (disc >= minDiscount || minDiscount === 0)) {
+                data.push({
+                  tienda: "Coto Digital",
+                  nombre: titleM[1].replace(/<[^>]*>/g, "").trim(),
+                  precio: current,
+                  precioLista: original > current ? original : null,
+                  descuentoTienda: disc,
+                  url: linkM ? `https://www.cotodigital3.com.ar${linkM[1]}` : "https://www.cotodigital3.com.ar"
+                });
+              }
+            }
+          });
+        }
+
+        // MODO 4: PEDIDOSYA Y RAPPI (Directo con origen local)
+        else if (store === "pedidosya" || store === "rappi") {
+          const res = await fetch(`https://card-service.pedidosya.com/v1/cards?countryId=1&maxIndex=30`);
+          const json = await res.json();
+          (json.cards || []).forEach(c => {
+            (c.items || []).forEach(prod => {
+              const current = Number(prod.price || 0);
+              const original = Number(prod.originalPrice || 0);
+              let disc = Number(prod.discount || 0);
+              if (original > current && current > 0 && !disc) {
+                disc = Math.round(((original - current) / original) * 100);
+              }
+              if (current > 0 && (disc >= minDiscount || minDiscount === 0)) {
+                data.push({
+                  tienda: store === "pedidosya" ? "PedidosYa Market" : "Rappi Turbo",
+                  nombre: prod.name || prod.title,
+                  precio: current,
+                  precioLista: original > current ? original : null,
+                  descuentoTienda: disc,
+                  url: store === "pedidosya" ? "https://www.pedidosya.com.ar/" : "https://www.rappi.com.ar/"
+                });
+              }
+            });
+          });
+        }
 
         if (!data || data.length === 0) {
           statusDiv.innerHTML = `
             <div class="bg-slate-800 border border-slate-700 text-slate-300 px-4 py-3 rounded-xl inline-block text-sm">
-              No se encontraron productos con ese criterio en esta tienda. Prueba quitando la palabra clave o seleccionando otra tienda.
+              No se encontraron productos para esta búsqueda. Prueba con otro término o seleccionando otra tienda.
             </div>
           `;
           return;
         }
 
-        const realCount = data.filter(d => d.verdict === "REAL").length;
-        const fakeCount = data.filter(d => d.verdict === "INFLADO").length;
-
         statusDiv.innerHTML = `
-          <div class="flex items-center justify-center gap-3 text-xs md:text-sm text-slate-300 flex-wrap">
-            <span>Analizados: <b class="text-white">${data.length}</b></span>
-            <span class="bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 px-2.5 py-0.5 rounded-full font-bold">🟢 ${realCount} Reales</span>
-            ${fakeCount > 0 ? `<span class="bg-rose-900/60 border border-rose-500/40 text-rose-300 px-2.5 py-0.5 rounded-full font-bold">🔴 ${fakeCount} Inflados</span>` : ''}
+          <div class="text-xs md:text-sm text-slate-300">
+            Se encontraron <b class="text-white">${data.length}</b> productos en <b>${store.toUpperCase()}</b>:
           </div>
         `;
 
         resultsDiv.innerHTML = data.map(item => {
-          const isReal = item.verdict === "REAL";
-          const isFake = item.verdict === "INFLADO";
+          // Evaluación limpia sin falsos positivos de "Liquidación" en artículos de 1 millón
+          let badge = "🟡 Descuento declarado por tienda";
+          let badgeColor = "bg-slate-700/50 text-slate-300 border-slate-600";
+
+          if (item.precio < 1200 && item.descuentoTienda >= 50) {
+            badge = "🔥 Liquidación Real (< $1.200)";
+            badgeColor = "bg-emerald-900/60 text-emerald-300 border-emerald-500/40";
+          } else if (item.descuentoTienda >= 70 && item.precio > 50000) {
+            badge = "⚠️ Posible precio inflado de lista";
+            badgeColor = "bg-rose-950/60 text-rose-300 border-rose-500/40";
+          }
 
           return `
-            <div class="bg-slate-800/90 border ${isReal ? 'border-emerald-500/60 shadow-md shadow-emerald-950/20' : isFake ? 'border-rose-500/60' : 'border-slate-700'} rounded-2xl p-5 flex flex-col justify-between hover:border-slate-500 transition">
+            <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 flex flex-col justify-between hover:border-slate-500 transition">
               <div>
-                <!-- Encabezado de tarjeta -->
                 <div class="flex justify-between items-center mb-3">
                   <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300">
                     ${item.tienda}
                   </span>
                   ${item.descuentoTienda > 0 ? `
-                    <span class="text-xs font-extrabold px-2 py-0.5 rounded-md ${isReal ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30' : 'bg-slate-900 text-slate-400'}">
-                      -${item.descuentoTienda}% declarado
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-900 text-slate-300">
+                      -${item.descuentoTienda}%
                     </span>
                   ` : ''}
                 </div>
 
-                <!-- Dictamen del auditor -->
                 <div class="mb-3">
-                  <span class="inline-block text-xs font-bold px-2.5 py-1 rounded-lg border ${item.verdictColor}">
-                    ${item.verdictBadge}
+                  <span class="inline-block text-xs font-medium px-2 py-0.5 rounded border ${badgeColor}">
+                    ${badge}
                   </span>
-                  <div class="text-xs text-slate-400 mt-1.5">
-                    ${item.marketInfo}
-                  </div>
                 </div>
 
-                <!-- Nombre del producto -->
                 <a href="${item.url}" target="_blank" class="font-semibold text-sm text-slate-100 hover:text-indigo-400 transition line-clamp-2 mb-4" title="${item.nombre}">
                   ${item.nombre}
                 </a>
               </div>
 
-              <!-- Precios y Enlace -->
               <div class="pt-3 border-t border-slate-700/80">
                 <div class="flex items-baseline gap-2 mb-3.5">
                   <span class="text-2xl font-black text-emerald-400">
@@ -173,10 +259,11 @@
             </div>
           `;
         }).join("");
+
       } catch (err) {
         statusDiv.innerHTML = `
           <div class="bg-rose-900/60 border border-rose-500/40 text-rose-300 px-4 py-2.5 rounded-xl inline-block text-sm">
-            Error al consultar el catálogo. Intenta nuevamente.
+            Error al consultar esta tienda: ${err.message || 'Bloqueo temporal'}. Intenta con otra plataforma.
           </div>
         `;
       } finally {
