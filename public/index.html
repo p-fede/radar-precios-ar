@@ -3,66 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auditor de Precios y Cazador de Ofertas Reales</title>
+  <title>Cazador de Precios Reales y Ofertas</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-neutral-950 text-neutral-100 min-h-screen p-4 md:p-8 font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 font-sans antialiased selection:bg-indigo-500 selection:text-white">
   <div class="max-w-6xl mx-auto">
-    <!-- Header -->
-    <header class="text-center mb-8">
-      <div class="inline-block bg-red-950 border border-red-800 text-red-400 text-xs font-black uppercase px-3 py-1 rounded-full mb-3 tracking-widest animate-pulse">
-        🛡️ AUDITOR DE OFERTAS & COMPARADOR CRUZADO
+    <!-- Header visual descansado -->
+    <header class="text-center mb-8 pt-4">
+      <div class="inline-flex items-center gap-2 bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 text-xs font-bold uppercase px-3.5 py-1.5 rounded-full mb-3 tracking-wider shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        Radar de Precios Reales & Auditor Antiestafa
       </div>
-      <h1 class="text-3xl md:text-5xl font-black text-white mb-2">Cazador de Precios Reales</h1>
-      <p class="text-neutral-400 text-sm md:text-base">Contrasta cada oferta contra el mercado en tiempo real para descartar precios inflados</p>
+      <h1 class="text-3xl md:text-5xl font-extrabold text-slate-100 tracking-tight mb-2">
+        Cazador de Ofertas Reales
+      </h1>
+      <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
+        Compara cada rebaja contra el mercado real y detecta si es una ganga auténtica o un precio inflado.
+      </p>
     </header>
 
-    <!-- Panel de Control y Filtros -->
-    <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-6 mb-8 max-w-4xl mx-auto shadow-2xl">
+    <!-- Panel de Control y Filtros (Fondo pizarra suave con bordes sutiles) -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 md:p-6 mb-8 max-w-4xl mx-auto shadow-xl backdrop-blur-sm">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <!-- Selector de Tienda -->
         <div>
-          <label class="block text-xs font-bold text-neutral-400 mb-1">PLATAFORMA</label>
-          <select id="storeSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="carrefour">🔵 Carrefour (Auditado)</option>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Plataforma</label>
+          <select id="storeSelect" class="w-full bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-xl p-3 text-slate-100 font-medium outline-none focus:ring-2 focus:ring-indigo-500 transition cursor-pointer">
+            <option value="carrefour" selected>🔵 Carrefour</option>
             <option value="dia">🔴 Supermercados Día</option>
-            <option value="easy">🟠 Easy (Herramientas / Hogar)</option>
-            <option value="fravega">🟣 Frávega (Tecno / Electro)</option>
-            <option value="mercadolibre">🟡 MercadoLibre (General)</option>
-            <option value="coto">🔴 Coto Digital (Catálogo)</option>
-            <option value="pedidosya">🔴 PedidosYa (Markets)</option>
-            <option value="rappi">🟠 Rappi (Turbo / Super)</option>
+            <option value="easy">🟠 Easy</option>
+            <option value="fravega">🟣 Frávega</option>
+            <option value="mercadolibre">🟡 MercadoLibre</option>
+            <option value="coto">🔴 Coto Digital</option>
+            <option value="pedidosya">🔴 PedidosYa Market</option>
+            <option value="rappi">🟠 Rappi Turbo</option>
           </select>
         </div>
 
         <!-- Filtro de Descuento Mínimo -->
         <div>
-          <label class="block text-xs font-bold text-neutral-400 mb-1">FILTRO DE OFERTA</label>
-          <select id="discountSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="0">Ver Todo / Sin Filtro Mínimo</option>
-            <option value="20" selected>Desde 20% OFF</option>
-            <option value="40">Desde 40% OFF (Liquidaciones)</option>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Filtro de Descuento</label>
+          <select id="discountSelect" class="w-full bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-xl p-3 text-slate-100 font-medium outline-none focus:ring-2 focus:ring-indigo-500 transition cursor-pointer">
+            <option value="0" selected>⚡ Ver Todo (Incluye Liquidaciones)</option>
+            <option value="20">Desde 20% OFF</option>
+            <option value="40">Desde 40% OFF</option>
             <option value="60">Solo Gangas Extremas (60%+)</option>
           </select>
         </div>
 
-        <!-- Categoría opcional con recordatorio de contexto -->
+        <!-- Categoría opcional -->
         <div>
-          <label class="block text-xs font-bold text-neutral-400 mb-1">PALABRA / CATEGORÍA</label>
-          <input id="catInput" type="text" placeholder="Ej: taladro, heladera, cafe, galletitas..." 
-                 class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 text-sm">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Palabra Clave (Opcional)</label>
+          <input id="catInput" type="text" placeholder="Ej: cafe, repelente, taladro..." 
+                 class="w-full bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-xl p-3 text-slate-100 placeholder-slate-500 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition">
         </div>
       </div>
 
-      <button id="scanBtn" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-base shadow-lg shadow-red-950/50 cursor-pointer">
-        <span>⚡</span> Auditar y Rastrear Ofertas
+      <button id="scanBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition duration-150 flex items-center justify-center gap-2 text-sm shadow-md cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        Auditar y Rastrear Ofertas
       </button>
     </div>
 
     <!-- Indicador de estado -->
-    <div id="status" class="text-center text-neutral-400 my-6 hidden"></div>
+    <div id="status" class="text-center text-slate-400 my-6 hidden"></div>
 
-    <!-- Grilla de Ofertas -->
+    <!-- Grilla de Ofertas (Tarjetas descansadas con excelente legibilidad) -->
     <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
   </div>
 
@@ -80,9 +86,9 @@
       const category = catInput.value.trim();
 
       statusDiv.innerHTML = `
-        <div class="inline-flex items-center gap-2 text-neutral-300">
-          <svg class="animate-spin h-5 w-5 text-red-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Extrayendo catálogo de <b>${store.toUpperCase()}</b> y contrastando con precios de referencia...
+        <div class="inline-flex items-center gap-2.5 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-slate-300 text-sm">
+          <svg class="animate-spin h-4 w-4 text-indigo-400" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          Consultando <b>${store.toUpperCase()}</b> y contrastando contra precios del mercado...
         </div>
       `;
       statusDiv.classList.remove("hidden");
@@ -94,7 +100,11 @@
         const data = await res.json();
 
         if (!data || data.length === 0) {
-          statusDiv.innerHTML = `❌ No se encontraron productos para esta búsqueda. Recuerda que en PedidosYa/Rappi debes buscar alimentos/almacén y en Frávega artículos de electro/tecno.`;
+          statusDiv.innerHTML = `
+            <div class="bg-slate-900 border border-slate-800 text-slate-300 px-4 py-3 rounded-xl inline-block text-sm">
+              No se encontraron ofertas con ese término en esta tienda. Prueba quitando la palabra clave o eligiendo otra tienda.
+            </div>
+          `;
           return;
         }
 
@@ -102,58 +112,75 @@
         const fakeCount = data.filter(d => d.verdict === "INFLADO").length;
 
         statusDiv.innerHTML = `
-          Analizados <b class="text-white">${data.length}</b> productos:
-          <span class="text-emerald-400 font-bold ml-2">🟢 ${realCount} Reales comprobados</span>
-          ${fakeCount > 0 ? `<span class="text-red-400 font-bold ml-2">🔴 ${fakeCount} Precios inflados</span>` : ''}
+          <div class="flex items-center justify-center gap-3 text-xs md:text-sm text-slate-300 flex-wrap">
+            <span>Analizados: <b class="text-white">${data.length}</b></span>
+            <span class="bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 px-2.5 py-0.5 rounded-full font-bold">🟢 ${realCount} Ofertas Reales</span>
+            ${fakeCount > 0 ? `<span class="bg-rose-950/80 border border-rose-500/40 text-rose-300 px-2.5 py-0.5 rounded-full font-bold">🔴 ${fakeCount} Precios Inflados</span>` : ''}
+          </div>
         `;
 
         resultsDiv.innerHTML = data.map(item => {
-          const isFake = item.verdict === "INFLADO";
           const isReal = item.verdict === "REAL";
+          const isFake = item.verdict === "INFLADO";
 
           return `
-            <div class="bg-neutral-900 border ${isReal ? 'border-emerald-600 shadow-lg shadow-emerald-950/40' : isFake ? 'border-red-600' : 'border-neutral-800'} rounded-2xl p-5 flex flex-col justify-between transition">
+            <div class="bg-slate-900 border ${isReal ? 'border-emerald-500/60 shadow-lg shadow-emerald-950/20' : isFake ? 'border-rose-500/50' : 'border-slate-800'} rounded-2xl p-5 flex flex-col justify-between hover:border-slate-700 transition">
               <div>
+                <!-- Encabezado de tarjeta -->
                 <div class="flex justify-between items-center mb-3">
-                  <span class="text-xs font-black uppercase tracking-wider px-2 py-1 rounded bg-neutral-800 text-neutral-300">
+                  <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">
                     ${item.tienda}
                   </span>
                   ${item.descuentoTienda > 0 ? `
-                    <span class="bg-neutral-800 text-neutral-300 text-xs font-black px-2.5 py-1 rounded-md">
-                      -${item.descuentoTienda}% según tienda
+                    <span class="text-xs font-extrabold px-2 py-0.5 rounded-md ${isReal ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
+                      -${item.descuentoTienda}% tienda
                     </span>
                   ` : ''}
                 </div>
 
+                <!-- Veredicto del Auditor Antiestafa -->
                 <div class="mb-3">
-                  <span class="text-xs ${item.verdictColor}">
-                    ${item.verdictLabel}
+                  <span class="inline-block text-xs font-bold px-2.5 py-1 rounded-lg border ${item.verdictColor}">
+                    ${item.verdictBadge}
                   </span>
-                  <div class="text-[11px] text-neutral-400 mt-0.5">
+                  <div class="text-xs text-slate-400 mt-1.5 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
                     ${item.marketInfo}
                   </div>
                 </div>
 
-                <a href="${item.url}" target="_blank" class="font-bold text-sm text-neutral-100 line-clamp-2 hover:text-red-400 transition mb-4" title="${item.nombre}">
+                <!-- Título del producto con alto contraste -->
+                <a href="${item.url}" target="_blank" class="font-semibold text-sm text-slate-200 hover:text-indigo-400 transition line-clamp-2 mb-4" title="${item.nombre}">
                   ${item.nombre}
                 </a>
               </div>
 
-              <div class="pt-3 border-t border-neutral-800/80">
-                <div class="flex items-baseline gap-2 mb-3">
-                  <span class="text-2xl font-black text-emerald-400">$ ${item.precio.toLocaleString("es-AR")}</span>
-                  ${item.precioLista ? `<span class="text-xs text-neutral-500 line-through">$ ${item.precioLista.toLocaleString("es-AR")}</span>` : ''}
+              <!-- Precios y botón de acción -->
+              <div class="pt-3 border-t border-slate-800/80">
+                <div class="flex items-baseline gap-2 mb-3.5">
+                  <span class="text-2xl font-black text-emerald-400">
+                    $ ${item.precio.toLocaleString("es-AR")}
+                  </span>
+                  ${item.precioLista ? `
+                    <span class="text-xs text-slate-500 line-through">
+                      $ ${item.precioLista.toLocaleString("es-AR")}
+                    </span>
+                  ` : ''}
                 </div>
 
-                <a href="${item.url}" target="_blank" class="block w-full text-center bg-neutral-800 hover:bg-neutral-700 py-2 rounded-xl text-xs font-bold text-white transition">
-                  Ver en ${item.tienda} ↗
+                <a href="${item.url}" target="_blank" class="block w-full text-center bg-slate-800 hover:bg-slate-700 active:bg-slate-800 border border-slate-700 py-2.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition">
+                  Ver Oferta en ${item.tienda} ↗
                 </a>
               </div>
             </div>
           `;
         }).join("");
       } catch (err) {
-        statusDiv.innerHTML = "⚠️ Error al consultar el catálogo. Intenta nuevamente.";
+        statusDiv.innerHTML = `
+          <div class="bg-rose-950/80 border border-rose-500/40 text-rose-300 px-4 py-2.5 rounded-xl inline-block text-sm">
+            Error al consultar el catálogo. Intenta nuevamente.
+          </div>
+        `;
       } finally {
         scanBtn.disabled = false;
       }
