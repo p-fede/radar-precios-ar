@@ -11,53 +11,22 @@ export default async function handler(req, res) {
     "Accept-Language": "es-AR,es;q=0.9"
   };
 
-  // Comparador con timeout estricto y sin saturar la API
-  async function safeBenchmark(title) {
-    try {
-      const clean = title
-        .replace(/[\(\)\[\],.\/]/g, " ")
-        .replace(/\b(supermercados|dia|carrefour|expert|easy|fravega|oferta|promo|gr|kg|ml|lt|un|de|para|con)\b/gi, "")
-        .replace(/[^\w\s]/gi, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .split(" ")
-        .slice(0, 3)
-        .join(" ");
-
-      const controller = new AbortController();
-      const tId = setTimeout(() => controller.abort(), 1200);
-
-      const r = await fetch(`https://api.mercadolibre.com/sites/MLA/search?q=${encodeURIComponent(clean)}&limit=4`, {
-        headers: fakeHeaders,
-        signal: controller.signal
-      });
-      clearTimeout(tId);
-
-      if (!r.ok) return null;
-      const data = await r.json();
-      const prices = (data.results || []).map(x => x.price).filter(p => p > 100);
-      if (prices.length === 0) return null;
-      prices.sort((a, b) => a - b);
-      return prices[Math.floor(prices.length / 2)];
-    } catch {
-      return null;
-    }
-  }
-
   let items = [];
 
   try {
-    // -------------------------------------------------------------------------
-    // 1. CARREFOUR, DÍA Y EASY (VTEX)
-    // -------------------------------------------------------------------------
+    // ----------------------------------------------------
+    // PLATAFORMAS VTEX (Carrefour, Día Online, Easy)
+    // Funcionan al 100% desde la nube sin bloqueos de IP
+    // ----------------------------------------------------
     if (store === "carrefour" || store === "dia" || store === "easy") {
       const hosts = {
         carrefour: "www.carrefour.com.ar",
         dia: "diaonline.supermercadosdia.com.ar",
         easy: "www.easy.com.ar"
       };
+
       const term = category ? encodeURIComponent(category) : "";
-      const url = `https://${hosts[store]}/api/catalog_system/pub/products/search/${term}?O=OrderByBestDiscountDESC&_from=0&_to=30`;
+      const url = `https://${hosts[store]}/api/catalog_system/pub/products/search/${term}?O=OrderByBestDiscountDESC&_from=0&_to=35`;
 
       const r = await fetch(url, { headers: fakeHeaders });
       if (r.ok) {
@@ -67,17 +36,22 @@ export default async function handler(req, res) {
           const current = Number(offer?.Price || offer?.spotPrice || 0);
           const original = Number(offer?.ListPrice || 0);
           let disc = 0;
+
           if (original > current && current > 0) {
             disc = Math.round(((original - current) / original) * 100);
           }
 
-          if (current > 0 && (disc >= minDisc || minDisc === 0)) {
+          // Detección de gangas o precios anormales por debajo de $1.200
+          const isCheap = current > 10 && current < 1200;
+
+          if (current > 0 && (disc >= minDisc || isCheap || minDisc === 0)) {
             items.push({
               tienda: store === "carrefour" ? "Carrefour" : store === "dia" ? "Día Online" : "Easy",
               nombre: `${p.brand ? p.brand + ' - ' : ''}${p.productName || p.productTitle}`,
               precio: current,
               precioLista: original > current ? original : null,
               descuentoTienda: disc,
+              isCheap,
               url: p.link || `https://${hosts[store]}/${p.linkText}/p`
             });
           }
@@ -85,50 +59,18 @@ export default async function handler(req, res) {
       }
     }
 
-    // -------------------------------------------------------------------------
-    // 2. MERCADOLIBRE (API abierta estándar)
-    // -------------------------------------------------------------------------
-    else if (store === "mercadolibre") {
-      const q = category ? encodeURIComponent(category) : "herramientas";
-      const url = `https://api.mercadolibre.com/sites/MLA/search?q=${q}&limit=35`;
-      const r = await fetch(url, { headers: fakeHeaders });
-      if (r.ok) {
-        const data = await r.json();
-        (data.results || []).forEach(p => {
-          const current = Number(p.price || 0);
-          const original = Number(p.original_price || 0);
-          let disc = 0;
-          if (original > current && current > 0) {
-            disc = Math.round(((original - current) / original) * 100);
-          }
-
-          if (current > 0 && (disc >= minDisc || minDisc === 0 || original > current)) {
-            items.push({
-              tienda: "MercadoLibre",
-              nombre: p.title,
-              precio: current,
-              precioLista: original > current ? original : null,
-              descuentoTienda: disc,
-              url: p.permalink
-            });
-          }
-        });
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 3. FRÁVEGA (API nativa)
-    // -------------------------------------------------------------------------
+    // ----------------------------------------------------
+    // FRÁVEGA (Modo adaptativo)
+    // ----------------------------------------------------
     else if (store === "fravega") {
-      const q = category ? encodeURIComponent(category) : "tecnologia";
-      const url = `https://www.fravega.com/api/v2/products/search?keyword=${q}&size=30&sort=discount,desc`;
-      const r = await fetch(url, {
+      const term = category ? encodeURIComponent(category) : "ofertas";
+      const r = await fetch(`https://www.fravega.com/api/v2/products/search?keyword=${term}&size=35&sort=discount,desc`, {
         headers: {
           ...fakeHeaders,
-          "Host": "www.fravega.com",
           "Referer": "https://www.fravega.com/"
         }
       });
+
       if (r.ok) {
         const data = await r.json();
         const list = data.products || data.items || [];
@@ -153,137 +95,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // -------------------------------------------------------------------------
-    // 4. COTO DIGITAL
-    // -------------------------------------------------------------------------
-    else if (store === "coto") {
-      const term = category ? encodeURIComponent(category).replace(/%20/g, "+") : "ofertas";
-      const url = `https://www.cotodigital3.com.ar/sitios/cdigi/browse?_dyncharset=utf-8&Ntt=${term}`;
-      const r = await fetch(url, { headers: fakeHeaders });
-      if (r.ok) {
-        const html = await r.text();
-        const blocks = html.match(/<li class="clearfix"[\s\S]*?<\/li>/gi) || [];
-        blocks.slice(0, 25).forEach(b => {
-          const titleM = b.match(/<div class="descrip_full">(.*?)<\/div>/i);
-          const priceM = b.match(/<span class="atg_store_newPrice">\s*\$([\d.,]+)/i);
-          const oldM = b.match(/<span class="atg_store_oldPrice">\s*\$([\d.,]+)/i);
-          const linkM = b.match(/href="([^"]*\/sitios\/cdigi\/producto\/[^"]*)"/i);
-
-          if (titleM && priceM) {
-            const current = parseFloat(priceM[1].replace(/\./g, "").replace(",", "."));
-            const original = oldM ? parseFloat(oldM[1].replace(/\./g, "").replace(",", ".")) : 0;
-            let disc = 0;
-            if (original > current && current > 0) {
-              disc = Math.round(((original - current) / original) * 100);
-            }
-            if (current > 0 && (disc >= minDisc || minDisc === 0)) {
-              items.push({
-                tienda: "Coto Digital",
-                nombre: titleM[1].replace(/<[^>]*>/g, "").trim(),
-                precio: current,
-                precioLista: original > current ? original : null,
-                descuentoTienda: disc,
-                url: linkM ? `https://www.cotodigital3.com.ar${linkM[1]}` : "https://www.cotodigital3.com.ar"
-              });
-            }
-          }
-        });
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 5. PEDIDOSYA & RAPPI (Mercados)
-    // -------------------------------------------------------------------------
-    else if (store === "pedidosya" || store === "rappi") {
-      const r = await fetch(`https://card-service.pedidosya.com/v1/cards?countryId=1&maxIndex=30`, {
-        headers: {
-          ...fakeHeaders,
-          "Origin": "https://www.pedidosya.com.ar",
-          "Referer": "https://www.pedidosya.com.ar/"
-        }
-      });
-      if (r.ok) {
-        const data = await r.json();
-        (data.cards || []).forEach(c => {
-          (c.items || []).forEach(prod => {
-            const current = Number(prod.price || 0);
-            const original = Number(prod.originalPrice || 0);
-            let disc = Number(prod.discount || 0);
-            if (original > current && current > 0 && !disc) {
-              disc = Math.round(((original - current) / original) * 100);
-            }
-            if (current > 0 && (disc >= minDisc || minDisc === 0)) {
-              items.push({
-                tienda: store === "pedidosya" ? "PedidosYa Market" : "Rappi Turbo",
-                nombre: prod.name || prod.title,
-                precio: current,
-                precioLista: original > current ? original : null,
-                descuentoTienda: disc,
-                url: store === "pedidosya" ? "https://www.pedidosya.com.ar/" : "https://www.rappi.com.ar/"
-              });
-            }
-          });
-        });
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // AUDITORÍA SIN FALSOS POSITIVOS
-    // -------------------------------------------------------------------------
-    const targetSlice = items.slice(0, 15);
-    const audited = await Promise.all(targetSlice.map(async (item) => {
-      const benchmark = await safeBenchmark(item.nombre);
-      let verdict = "REGULAR";
-      let verdictBadge = "🟡 PRECIO REGULAR";
-      let verdictColor = "bg-amber-500/10 text-amber-300 border-amber-500/30";
-      let marketInfo = "Sin comparación directa disponible";
-
-      if (benchmark && benchmark > 0) {
-        marketInfo = `En otras tiendas: $ ${benchmark.toLocaleString("es-AR")}`;
-
-        // 1. ESTAFA DETECTADA: Si en la tienda sale igual o más caro que afuera
-        if (item.precio >= benchmark * 1.05) {
-          verdict = "INFLADO";
-          verdictBadge = "🔴 ESTAFA: PRECIO INFLADO";
-          verdictColor = "bg-rose-500/10 text-rose-300 border-rose-500/40";
-        }
-        // 2. OFERTA REAL: Al menos 15% más barato que el mercado de referencia
-        else if (item.precio < benchmark * 0.85) {
-          const ahorro = Math.round(((benchmark - item.precio) / benchmark) * 100);
-          verdict = "REAL";
-          verdictBadge = `🟢 OFERTA REAL (-${ahorro}% vs Mercado)`;
-          verdictColor = "bg-emerald-500/10 text-emerald-300 border-emerald-500/40";
-        }
-      } else {
-        // Si no hay datos de mercado de referencia:
-        // Solo artículos de consumo masivo con precio menor a $1.500 pueden considerarse liquidación sin comparar
-        if (item.precio < 1500 && item.descuentoTienda >= 50) {
-          verdict = "REAL";
-          verdictBadge = "🔥 LIQUIDACIÓN DE TIENDA (< $1.500)";
-          verdictColor = "bg-emerald-500/10 text-emerald-300 border-emerald-500/40";
-          marketInfo = "Precio unitario bajo";
-        } else {
-          verdict = "REGULAR";
-          verdictBadge = "⚠️ DESCUENTO NO COMPROBADO";
-          verdictColor = "bg-slate-700/40 text-slate-300 border-slate-600/40";
-          marketInfo = "La tienda declara rebaja, pero no hay referencia externa";
-        }
-      }
-
-      return {
-        ...item,
-        verdict,
-        verdictBadge,
-        verdictColor,
-        marketInfo
-      };
-    }));
-
-    // Ordenamiento: primero las ofertas reales comprobadas, luego las dudosas y al final las infladas
-    const weights = { "REAL": 1, "REGULAR": 2, "INFLADO": 3 };
-    audited.sort((a, b) => (weights[a.verdict] - weights[b.verdict]) || (b.descuentoTienda - a.descuentoTienda));
-
-    return res.status(200).json(audited);
+    return res.status(200).json(items);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
