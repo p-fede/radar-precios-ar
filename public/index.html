@@ -3,194 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cazador de Precios Reales y Ofertas</title>
+  <title>Buscador de Precios en Tiendas Locales</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans antialiased">
   <div class="max-w-6xl mx-auto">
     <!-- Header -->
     <header class="text-center mb-8 pt-2">
-      <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-semibold uppercase px-3.5 py-1.5 rounded-full mb-3 shadow-sm">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        Radar de Precios Reales & Auditor Antiestafa
+      <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-semibold uppercase px-3 py-1 rounded-full mb-3 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Multi-Buscador de Tiendas Locales Argentinas
       </div>
       <h1 class="text-3xl md:text-5xl font-extrabold text-white tracking-tight mb-2">
-        Cazador de Ofertas Reales
+        Radar de Precios Simultáneo
       </h1>
       <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">
-        Detecta liquidaciones auténticas y contrasta rebajas sin bloqueos de servidor.
+        Busca al mismo tiempo en Easy, Megatone, Musimundo, Naldo, Cetrogar, Carrefour y Día.
       </p>
     </header>
 
-    <!-- Panel de Control -->
+    <!-- Barra de búsqueda y selector -->
     <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 md:p-6 mb-8 max-w-4xl mx-auto shadow-lg backdrop-blur-sm">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <!-- Plataforma -->
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Plataforma</label>
-          <select id="storeSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
-            <option value="carrefour" selected>🔵 Carrefour</option>
-            <option value="dia">🔴 Supermercados Día</option>
-            <option value="easy">🟠 Easy</option>
-            <option value="fravega">🟣 Frávega</option>
-            <option value="mercadolibre">🟡 MercadoLibre</option>
-            <option value="coto">🔴 Coto Digital</option>
-            <option value="pedidosya">🔴 PedidosYa Market</option>
-            <option value="rappi">🟠 Rappi Turbo</option>
-          </select>
+        <!-- Input de producto -->
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Producto a buscar</label>
+          <input id="qInput" type="text" placeholder="Ej: taladro bosch, celular samsung, cargador tipo c, pava electrica..." 
+                 class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white placeholder-slate-400 text-sm outline-none focus:border-indigo-500 font-medium">
         </div>
 
-        <!-- Descuento Mínimo -->
+        <!-- Rubro -->
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Filtro de Descuento</label>
-          <select id="discountSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
-            <option value="0" selected>Ver Todo (Liquidaciones y Promos)</option>
-            <option value="20">Desde 20% OFF</option>
-            <option value="40">Desde 40% OFF</option>
-            <option value="60">Solo 60%+ OFF</option>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Rubro / Filtro</label>
+          <select id="catSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
+            <option value="todas" selected>⚡ Buscar en Todas a la Vez</option>
+            <option value="herramientas">Herramientas y Hogar</option>
+            <option value="tecnologia">Tecnología y Celulares</option>
+            <option value="electro">Electrodomésticos</option>
           </select>
-        </div>
-
-        <!-- Palabra Clave -->
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Palabra Clave (Opcional)</label>
-          <input id="catInput" type="text" placeholder="Ej: cafe, fideos, taladro..." 
-                 class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white placeholder-slate-400 text-sm outline-none focus:border-indigo-500">
         </div>
       </div>
 
-      <button id="scanBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition duration-150 flex items-center justify-center gap-2 text-sm shadow cursor-pointer">
-        Auditar y Rastrear Ofertas
+      <button id="searchBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition duration-150 flex items-center justify-center gap-2 text-sm shadow cursor-pointer">
+        Consultar Todas las Tiendas Simultáneamente
       </button>
     </div>
 
-    <!-- Indicador de estado -->
+    <!-- Estado -->
     <div id="status" class="text-center text-slate-300 my-6 hidden"></div>
 
-    <!-- Grilla de Ofertas -->
+    <!-- Resultados -->
     <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
   </div>
 
   <script>
-    const scanBtn = document.getElementById("scanBtn");
-    const storeSelect = document.getElementById("storeSelect");
-    const discountSelect = document.getElementById("discountSelect");
-    const catInput = document.getElementById("catInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const qInput = document.getElementById("qInput");
+    const catSelect = document.getElementById("catSelect");
     const statusDiv = document.getElementById("status");
     const resultsDiv = document.getElementById("results");
 
-    async function escanear() {
-      const store = storeSelect.value;
-      const minDiscount = parseInt(discountSelect.value, 10) || 0;
-      const category = catInput.value.trim();
+    async function buscar() {
+      const q = qInput.value.trim();
+      if (!q) return;
+
+      const cat = catSelect.value;
 
       statusDiv.innerHTML = `
         <div class="inline-flex items-center gap-2.5 bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-slate-200 text-sm">
           <svg class="animate-spin h-4 w-4 text-indigo-400" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Consultando <b>${store.toUpperCase()}</b> directamente...
+          Consultando tiendas argentinas en simultáneo...
         </div>
       `;
       statusDiv.classList.remove("hidden");
       resultsDiv.innerHTML = "";
-      scanBtn.disabled = true;
-
-      let data = [];
+      searchBtn.disabled = true;
 
       try {
-        // MODO 1: TIENDAS VTEX (Carrefour, Día, Easy) y Frávega vía Backend
-        if (["carrefour", "dia", "easy", "fravega"].includes(store)) {
-          const res = await fetch(`/api/search?store=${store}&minDiscount=${minDiscount}&category=${encodeURIComponent(category)}`);
-          data = await res.json();
-        }
-
-        // MODO 2: MERCADOLIBRE (Directo desde el navegador con tu IP local para evitar baneo en la nube)
-        else if (store === "mercadolibre") {
-          const term = category || "ofertas";
-          const res = await fetch(`https://api.mercadolibre.com/sites/MLA/search?q=${encodeURIComponent(term)}&limit=30`);
-          const json = await res.json();
-          (json.results || []).forEach(p => {
-            const current = Number(p.price || 0);
-            const original = Number(p.original_price || 0);
-            let disc = 0;
-            if (original > current && current > 0) {
-              disc = Math.round(((original - current) / original) * 100);
-            }
-            if (current > 0 && (disc >= minDiscount || minDiscount === 0)) {
-              data.push({
-                tienda: "MercadoLibre",
-                nombre: p.title,
-                precio: current,
-                precioLista: original > current ? original : null,
-                descuentoTienda: disc,
-                url: p.permalink
-              });
-            }
-          });
-        }
-
-        // MODO 3: COTO DIGITAL (Directo desde IP residencial argentina)
-        else if (store === "coto") {
-          const term = category ? encodeURIComponent(category).replace(/%20/g, "+") : "ofertas";
-          const res = await fetch(`https://www.cotodigital3.com.ar/sitios/cdigi/browse?_dyncharset=utf-8&Ntt=${term}`);
-          const html = await res.text();
-          const blocks = html.match(/<li class="clearfix"[\s\S]*?<\/li>/gi) || [];
-          blocks.slice(0, 30).forEach(b => {
-            const titleM = b.match(/<div class="descrip_full">(.*?)<\/div>/i);
-            const priceM = b.match(/<span class="atg_store_newPrice">\s*\$([\d.,]+)/i);
-            const oldM = b.match(/<span class="atg_store_oldPrice">\s*\$([\d.,]+)/i);
-            const linkM = b.match(/href="([^"]*\/sitios\/cdigi\/producto\/[^"]*)"/i);
-
-            if (titleM && priceM) {
-              const current = parseFloat(priceM[1].replace(/\./g, "").replace(",", "."));
-              const original = oldM ? parseFloat(oldM[1].replace(/\./g, "").replace(",", ".")) : 0;
-              let disc = 0;
-              if (original > current && current > 0) {
-                disc = Math.round(((original - current) / original) * 100);
-              }
-              if (current > 0 && (disc >= minDiscount || minDiscount === 0)) {
-                data.push({
-                  tienda: "Coto Digital",
-                  nombre: titleM[1].replace(/<[^>]*>/g, "").trim(),
-                  precio: current,
-                  precioLista: original > current ? original : null,
-                  descuentoTienda: disc,
-                  url: linkM ? `https://www.cotodigital3.com.ar${linkM[1]}` : "https://www.cotodigital3.com.ar"
-                });
-              }
-            }
-          });
-        }
-
-        // MODO 4: PEDIDOSYA Y RAPPI (Directo con origen local)
-        else if (store === "pedidosya" || store === "rappi") {
-          const res = await fetch(`https://card-service.pedidosya.com/v1/cards?countryId=1&maxIndex=30`);
-          const json = await res.json();
-          (json.cards || []).forEach(c => {
-            (c.items || []).forEach(prod => {
-              const current = Number(prod.price || 0);
-              const original = Number(prod.originalPrice || 0);
-              let disc = Number(prod.discount || 0);
-              if (original > current && current > 0 && !disc) {
-                disc = Math.round(((original - current) / original) * 100);
-              }
-              if (current > 0 && (disc >= minDiscount || minDiscount === 0)) {
-                data.push({
-                  tienda: store === "pedidosya" ? "PedidosYa Market" : "Rappi Turbo",
-                  nombre: prod.name || prod.title,
-                  precio: current,
-                  precioLista: original > current ? original : null,
-                  descuentoTienda: disc,
-                  url: store === "pedidosya" ? "https://www.pedidosya.com.ar/" : "https://www.rappi.com.ar/"
-                });
-              }
-            });
-          });
-        }
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&category=${cat}`);
+        const data = await res.json();
 
         if (!data || data.length === 0) {
           statusDiv.innerHTML = `
             <div class="bg-slate-800 border border-slate-700 text-slate-300 px-4 py-3 rounded-xl inline-block text-sm">
-              No se encontraron productos para esta búsqueda. Prueba con otro término o seleccionando otra tienda.
+              No se encontraron coincidencias para "${q}". Prueba con una palabra más genérica.
             </div>
           `;
           return;
@@ -198,42 +94,38 @@
 
         statusDiv.innerHTML = `
           <div class="text-xs md:text-sm text-slate-300">
-            Se encontraron <b class="text-white">${data.length}</b> productos en <b>${store.toUpperCase()}</b>:
+            Se encontraron <b class="text-white">${data.length}</b> opciones en las tiendas (ordenadas de menor a mayor precio):
           </div>
         `;
 
-        resultsDiv.innerHTML = data.map(item => {
-          // Evaluación limpia sin falsos positivos de "Liquidación" en artículos de 1 millón
-          let badge = "🟡 Descuento declarado por tienda";
-          let badgeColor = "bg-slate-700/50 text-slate-300 border-slate-600";
-
-          if (item.precio < 1200 && item.descuentoTienda >= 50) {
-            badge = "🔥 Liquidación Real (< $1.200)";
-            badgeColor = "bg-emerald-900/60 text-emerald-300 border-emerald-500/40";
-          } else if (item.descuentoTienda >= 70 && item.precio > 50000) {
-            badge = "⚠️ Posible precio inflado de lista";
-            badgeColor = "bg-rose-950/60 text-rose-300 border-rose-500/40";
-          }
+        resultsDiv.innerHTML = data.map((item, idx) => {
+          const isCheapest = idx === 0;
 
           return `
-            <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 flex flex-col justify-between hover:border-slate-500 transition">
+            <div class="bg-slate-800/90 border ${isCheapest ? 'border-emerald-500/80 shadow-lg shadow-emerald-950/20' : item.isBug ? 'border-rose-500/80' : 'border-slate-700'} rounded-2xl p-5 flex flex-col justify-between hover:border-slate-500 transition">
               <div>
                 <div class="flex justify-between items-center mb-3">
                   <span class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-slate-900 text-slate-300">
                     ${item.tienda}
                   </span>
-                  ${item.descuentoTienda > 0 ? `
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-900 text-slate-300">
-                      -${item.descuentoTienda}%
+                  ${isCheapest ? `
+                    <span class="text-xs font-black bg-emerald-500 text-slate-950 px-2 py-0.5 rounded">
+                      EL MÁS BARATO
+                    </span>
+                  ` : item.descuento > 0 ? `
+                    <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300">
+                      -${item.descuento}%
                     </span>
                   ` : ''}
                 </div>
 
-                <div class="mb-3">
-                  <span class="inline-block text-xs font-medium px-2 py-0.5 rounded border ${badgeColor}">
-                    ${badge}
-                  </span>
-                </div>
+                ${item.isBug ? `
+                  <div class="mb-2">
+                    <span class="text-[11px] font-bold bg-rose-950/60 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded">
+                      🚨 PRECIO GANGA / POSIBLE BUG
+                    </span>
+                  </div>
+                ` : ''}
 
                 <a href="${item.url}" target="_blank" class="font-semibold text-sm text-slate-100 hover:text-indigo-400 transition line-clamp-2 mb-4" title="${item.nombre}">
                   ${item.nombre}
@@ -253,7 +145,7 @@
                 </div>
 
                 <a href="${item.url}" target="_blank" class="block w-full text-center bg-slate-900 hover:bg-slate-700 border border-slate-600 py-2.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition">
-                  Ver Oferta en ${item.tienda} ↗
+                  Comprar en ${item.tienda} ↗
                 </a>
               </div>
             </div>
@@ -263,16 +155,16 @@
       } catch (err) {
         statusDiv.innerHTML = `
           <div class="bg-rose-900/60 border border-rose-500/40 text-rose-300 px-4 py-2.5 rounded-xl inline-block text-sm">
-            Error al consultar esta tienda: ${err.message || 'Bloqueo temporal'}. Intenta con otra plataforma.
+            Error en la consulta. Intenta nuevamente.
           </div>
         `;
       } finally {
-        scanBtn.disabled = false;
+        searchBtn.disabled = false;
       }
     }
 
-    scanBtn.addEventListener("click", escanear);
-    catInput.addEventListener("keypress", (e) => { if (e.key === "Enter") escanear(); });
+    searchBtn.addEventListener("click", buscar);
+    qInput.addEventListener("keypress", (e) => { if (e.key === "Enter") buscar(); });
   </script>
 </body>
 </html>
