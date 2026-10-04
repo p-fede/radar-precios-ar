@@ -11,23 +11,27 @@
     <!-- Header -->
     <header class="text-center mb-8">
       <div class="inline-block bg-red-950 border border-red-800 text-red-400 text-xs font-black uppercase px-3 py-1 rounded-full mb-3 tracking-widest animate-pulse">
-        🚨 RADAR DE LIQUIDACIONES Y BUGS
+        🚨 RADAR DE LIQUIDACIONES Y PRECIOS BUG
       </div>
       <h1 class="text-3xl md:text-5xl font-black text-white mb-2">Cazador de Ofertas Reales</h1>
-      <p class="text-neutral-400 text-sm md:text-base">Seleccioná la plataforma y detectá rebajas irrisorias en segundos</p>
+      <p class="text-neutral-400 text-sm md:text-base">Seleccioná la plataforma y detectá rebajas extremas en segundos</p>
     </header>
 
     <!-- Panel de Control y Filtros -->
     <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-6 mb-8 max-w-4xl mx-auto shadow-2xl">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <!-- Selector de Tienda -->
+        <!-- Selector de las 8 Plataformas -->
         <div>
           <label class="block text-xs font-bold text-neutral-400 mb-1">PLATAFORMA</label>
           <select id="storeSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="mercadolibre">MercadoLibre (Outlet y Chollos)</option>
-            <option value="fravega">Frávega (Electro / Tecno)</option>
-            <option value="dia">Supermercados Día (Almacén y Ofertas)</option>
-            <option value="easy">Easy (Herramientas y Hogar)</option>
+            <option value="mercadolibre">🟡 MercadoLibre (Promociones)</option>
+            <option value="fravega">🟣 Frávega (Tecno / Electro)</option>
+            <option value="carrefour">🔵 Carrefour (Hipermercado)</option>
+            <option value="dia">🔴 Supermercados Día (Almacén)</option>
+            <option value="coto">🔴 Coto Digital (Ofertas)</option>
+            <option value="easy">🟠 Easy (Herramientas / Hogar)</option>
+            <option value="pedidosya">🔴 PedidosYa (Mercados Express)</option>
+            <option value="rappi">🟠 Rappi (Turbo / Almacén)</option>
           </select>
         </div>
 
@@ -35,22 +39,22 @@
         <div>
           <label class="block text-xs font-bold text-neutral-400 mb-1">DESCUENTO MÍNIMO</label>
           <select id="discountSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="40">Desde 40% OFF</option>
-            <option value="50" selected>Desde 50% OFF (Recomendado)</option>
-            <option value="60">Desde 60% OFF (Liquidaciones)</option>
+            <option value="30">Desde 30% OFF</option>
+            <option value="40" selected>Desde 40% OFF (Recomendado)</option>
+            <option value="50">Desde 50% OFF (Liquidaciones)</option>
             <option value="70">Desde 70% OFF (Solo gangas y bugs)</option>
           </select>
         </div>
 
-        <!-- Categoría o filtro opcional -->
+        <!-- Filtro de Categoría / Palabra opcional -->
         <div>
-          <label class="block text-xs font-bold text-neutral-400 mb-1">FILTRO OPCIONAL (Opcional)</label>
-          <input id="catInput" type="text" placeholder="Ej: herramientas, zapatillas, café..." 
+          <label class="block text-xs font-bold text-neutral-400 mb-1">FILTRO / CATEGORÍA (Opcional)</label>
+          <input id="catInput" type="text" placeholder="Ej: heladera, café, taladro..." 
                  class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 text-sm">
         </div>
       </div>
 
-      <button id="scanBtn" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-base shadow-lg shadow-red-950/50">
+      <button id="scanBtn" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-base shadow-lg shadow-red-950/50 cursor-pointer">
         <span>⚡</span> Rastrear Ofertas Extremas
       </button>
     </div>
@@ -90,13 +94,13 @@
         const data = await res.json();
 
         if (!data || data.length === 0) {
-          statusDiv.innerHTML = `❌ No se encontraron ofertas que superen el <b>${minDiscount}% OFF</b> en este momento. Probá bajando el filtro a 40%.`;
+          statusDiv.innerHTML = `❌ No se encontraron ofertas que superen el <b>${minDiscount}% OFF</b> en este momento en esta tienda. Probá seleccionando otra plataforma o bajando el filtro a 30%.`;
           return;
         }
 
         const bugCount = data.filter(d => d.isBug).length;
         statusDiv.innerHTML = `
-          Se detectaron <b class="text-white">${data.length}</b> productos con descuentos masivos 
+          Se detectaron <b class="text-white">${data.length}</b> ofertas masivas 
           ${bugCount > 0 ? `<span class="bg-red-950 border border-red-700 text-red-400 px-2 py-0.5 rounded ml-2 font-bold">🚨 ${bugCount} POSIBLES PRECIOS BUG</span>` : ''}
         `;
 
