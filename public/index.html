@@ -3,106 +3,147 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Radar de Precios Argentina</title>
+  <title>Cazador de Precios Bug y Ofertas</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-neutral-950 text-neutral-100 min-h-screen p-4 md:p-8 font-sans">
-  <div class="max-w-5xl mx-auto">
+  <div class="max-w-6xl mx-auto">
     <!-- Header -->
     <header class="text-center mb-8">
-      <h1 class="text-3xl md:text-5xl font-black text-rose-500 mb-2">⚡ Radar de Precios</h1>
-      <p class="text-neutral-400 text-sm md:text-base">Compará precios en tiempo real entre tiendas argentinas</p>
+      <div class="inline-block bg-red-950 border border-red-800 text-red-400 text-xs font-black uppercase px-3 py-1 rounded-full mb-3 tracking-widest animate-pulse">
+        🚨 RADAR DE LIQUIDACIONES Y BUGS
+      </div>
+      <h1 class="text-3xl md:text-5xl font-black text-white mb-2">Cazador de Ofertas Reales</h1>
+      <p class="text-neutral-400 text-sm md:text-base">Seleccioná la plataforma y detectá rebajas irrisorias en segundos</p>
     </header>
 
-    <!-- Buscador -->
-    <div class="flex gap-2 max-w-xl mx-auto mb-8">
-      <input id="queryInput" type="text" placeholder="Ej: Oreo, Taladro Bosch, Mermelada BC..." 
-             class="flex-1 bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-white outline-none focus:border-rose-500">
-      <button id="searchBtn" class="bg-rose-600 hover:bg-rose-500 px-6 py-3 rounded-xl font-bold transition">
-        Buscar
+    <!-- Panel de Control y Filtros -->
+    <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-6 mb-8 max-w-4xl mx-auto shadow-2xl">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <!-- Selector de Tienda -->
+        <div>
+          <label class="block text-xs font-bold text-neutral-400 mb-1">PLATAFORMA</label>
+          <select id="storeSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
+            <option value="mercadolibre">MercadoLibre (Outlet y Chollos)</option>
+            <option value="fravega">Frávega (Electro / Tecno)</option>
+            <option value="dia">Supermercados Día (Almacén y Ofertas)</option>
+            <option value="easy">Easy (Herramientas y Hogar)</option>
+          </select>
+        </div>
+
+        <!-- Filtro de Descuento Mínimo -->
+        <div>
+          <label class="block text-xs font-bold text-neutral-400 mb-1">DESCUENTO MÍNIMO</label>
+          <select id="discountSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
+            <option value="40">Desde 40% OFF</option>
+            <option value="50" selected>Desde 50% OFF (Recomendado)</option>
+            <option value="60">Desde 60% OFF (Liquidaciones)</option>
+            <option value="70">Desde 70% OFF (Solo gangas y bugs)</option>
+          </select>
+        </div>
+
+        <!-- Categoría o filtro opcional -->
+        <div>
+          <label class="block text-xs font-bold text-neutral-400 mb-1">FILTRO OPCIONAL (Opcional)</label>
+          <input id="catInput" type="text" placeholder="Ej: herramientas, zapatillas, café..." 
+                 class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 text-sm">
+        </div>
+      </div>
+
+      <button id="scanBtn" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-base shadow-lg shadow-red-950/50">
+        <span>⚡</span> Rastrear Ofertas Extremas
       </button>
     </div>
 
-    <!-- Mensajes de estado -->
-    <div id="status" class="text-center text-neutral-400 my-4 hidden"></div>
+    <!-- Indicador de estado -->
+    <div id="status" class="text-center text-neutral-400 my-6 hidden"></div>
 
-    <!-- Resultados -->
-    <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <!-- Grilla de Ofertas Encontradas -->
+    <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
   </div>
 
   <script>
-    const searchBtn = document.getElementById("searchBtn");
-    const queryInput = document.getElementById("queryInput");
+    const scanBtn = document.getElementById("scanBtn");
+    const storeSelect = document.getElementById("storeSelect");
+    const discountSelect = document.getElementById("discountSelect");
+    const catInput = document.getElementById("catInput");
     const statusDiv = document.getElementById("status");
     const resultsDiv = document.getElementById("results");
 
-    async function buscar() {
-      const q = queryInput.value.trim();
-      if (!q) return;
+    async function escanear() {
+      const store = storeSelect.value;
+      const minDiscount = discountSelect.value;
+      const category = catInput.value.trim();
 
-      statusDiv.textContent = "Consultando tiendas en paralelo...";
+      statusDiv.innerHTML = `
+        <div class="inline-flex items-center gap-2 text-neutral-300">
+          <svg class="animate-spin h-5 w-5 text-red-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          Escaneando catálogo oficial de <b>${store.toUpperCase()}</b> buscando rebajas...
+        </div>
+      `;
       statusDiv.classList.remove("hidden");
       resultsDiv.innerHTML = "";
-      searchBtn.disabled = true;
+      scanBtn.disabled = true;
 
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const res = await fetch(`/api/search?store=${store}&minDiscount=${minDiscount}&category=${encodeURIComponent(category)}`);
         const data = await res.json();
 
         if (!data || data.length === 0) {
-          statusDiv.textContent = "No se encontraron productos con ese término.";
+          statusDiv.innerHTML = `❌ No se encontraron ofertas que superen el <b>${minDiscount}% OFF</b> en este momento. Probá bajando el filtro a 40%.`;
           return;
         }
 
-        statusDiv.textContent = `Se encontraron ${data.length} opciones (ordenadas de menor a mayor precio):`;
+        const bugCount = data.filter(d => d.isBug).length;
+        statusDiv.innerHTML = `
+          Se detectaron <b class="text-white">${data.length}</b> productos con descuentos masivos 
+          ${bugCount > 0 ? `<span class="bg-red-950 border border-red-700 text-red-400 px-2 py-0.5 rounded ml-2 font-bold">🚨 ${bugCount} POSIBLES PRECIOS BUG</span>` : ''}
+        `;
 
-        resultsDiv.innerHTML = data.map((item, idx) => {
-          const isCheapest = idx === 0;
-          const cotoUrl = `https://www.cotodigital3.com.ar/sitios/cdigi/browse?Ntt=${encodeURIComponent(item.nombre).replace(/%20/g, "+")}`;
-          const mlUrl = `https://listado.mercadolibre.com.ar/${encodeURIComponent(item.nombre)}`;
-
-          return `
-            <div class="bg-neutral-900 border ${isCheapest ? 'border-emerald-500/80 shadow-lg shadow-emerald-950/40' : 'border-neutral-800'} rounded-xl p-4 flex flex-col justify-between">
-              <div>
-                <div class="flex justify-between items-center mb-2">
-                  <span class="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded bg-neutral-800 text-neutral-300">
-                    ${item.tienda}
-                  </span>
-                  ${isCheapest ? '<span class="text-xs font-black bg-emerald-500 text-black px-2 py-0.5 rounded">MÁS BARATO</span>' : ''}
-                </div>
-                <a href="${item.url}" target="_blank" class="font-semibold text-sm line-clamp-2 hover:text-rose-400 transition mb-3">
-                  ${item.nombre}
-                </a>
+        resultsDiv.innerHTML = data.map(item => `
+          <div class="bg-neutral-900 border ${item.isBug ? 'border-red-600 shadow-xl shadow-red-950/40' : 'border-neutral-800'} rounded-2xl p-5 flex flex-col justify-between hover:border-neutral-700 transition">
+            <div>
+              <div class="flex justify-between items-center mb-3">
+                <span class="text-xs font-black uppercase tracking-wider px-2 py-1 rounded bg-neutral-800 text-neutral-300">
+                  ${item.tienda}
+                </span>
+                <span class="${item.isBug ? 'bg-red-600 text-white animate-pulse' : 'bg-orange-600 text-white'} text-xs font-black px-2.5 py-1 rounded-md">
+                  -${item.descuento}% OFF
+                </span>
               </div>
 
-              <div class="mt-4 pt-3 border-t border-neutral-800">
-                <div class="flex items-baseline gap-2 mb-3">
-                  <span class="text-2xl font-black text-emerald-400">$ ${item.precio.toLocaleString("es-AR")}</span>
-                  ${item.precioLista ? `<span class="text-xs text-neutral-500 line-through">$ ${item.precioLista.toLocaleString("es-AR")}</span>` : ''}
-                  ${item.descuento > 0 ? `<span class="text-xs font-bold text-rose-400">-${item.descuento}%</span>` : ''}
+              ${item.isBug ? `
+                <div class="bg-red-950/60 border border-red-800 text-red-400 text-xs font-bold px-2 py-1 rounded mb-3 flex items-center gap-1.5">
+                  <span>🚨</span> Posible Precio Bug / Liquidación Total
                 </div>
+              ` : ''}
 
-                <div class="flex gap-2 text-xs">
-                  <a href="${cotoUrl}" target="_blank" class="flex-1 text-center bg-neutral-800 hover:bg-neutral-700 py-1.5 rounded font-medium text-neutral-300">
-                    Ver en Coto
-                  </a>
-                  <a href="${mlUrl}" target="_blank" class="flex-1 text-center bg-neutral-800 hover:bg-neutral-700 py-1.5 rounded font-medium text-neutral-300">
-                    Ver en ML
-                  </a>
-                </div>
-              </div>
+              <a href="${item.url}" target="_blank" class="font-bold text-sm text-neutral-100 line-clamp-2 hover:text-red-400 transition mb-4" title="${item.nombre}">
+                ${item.nombre}
+              </a>
             </div>
-          `;
-        }).join("");
+
+            <div class="pt-3 border-t border-neutral-800/80">
+              <div class="flex items-baseline gap-2 mb-3">
+                <span class="text-2xl font-black text-emerald-400">$ ${item.precio.toLocaleString("es-AR")}</span>
+                ${item.precioLista ? `<span class="text-xs text-neutral-500 line-through">$ ${item.precioLista.toLocaleString("es-AR")}</span>` : ''}
+              </div>
+
+              <a href="${item.url}" target="_blank" class="block w-full text-center bg-neutral-800 hover:bg-neutral-700 py-2 rounded-xl text-xs font-bold text-white transition">
+                Ir a la Oferta ↗
+              </a>
+            </div>
+          </div>
+        `).join("");
       } catch (err) {
-        statusDiv.textContent = "Error al consultar las tiendas. Intenta nuevamente.";
+        statusDiv.innerHTML = "⚠️ Error al consultar el catálogo. Intenta nuevamente.";
       } finally {
-        searchBtn.disabled = false;
+        scanBtn.disabled = false;
       }
     }
 
-    searchBtn.addEventListener("click", buscar);
-    queryInput.addEventListener("keypress", (e) => { if (e.key === "Enter") buscar(); });
+    scanBtn.addEventListener("click", escanear);
+    catInput.addEventListener("keypress", (e) => { if (e.key === "Enter") escanear(); });
   </script>
 </body>
 </html>
