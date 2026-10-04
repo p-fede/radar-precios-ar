@@ -8,7 +8,6 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans antialiased">
   <div class="max-w-6xl mx-auto">
-    <!-- Header -->
     <header class="text-center mb-8 pt-2">
       <div class="inline-flex items-center gap-2 bg-slate-800 border border-slate-700 text-indigo-300 text-xs font-semibold uppercase px-3.5 py-1.5 rounded-full mb-3 shadow-sm">
         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -22,10 +21,8 @@
       </p>
     </header>
 
-    <!-- Panel de Control -->
     <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 md:p-6 mb-8 max-w-4xl mx-auto shadow-lg backdrop-blur-sm">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <!-- Plataforma -->
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Plataforma</label>
           <select id="storeSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
@@ -36,14 +33,12 @@
           </select>
         </div>
 
-        <!-- Producto opcional -->
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Producto (Opcional)</label>
           <input id="qInput" type="text" placeholder="Ej: taladro, cafe, fideos, celular..." 
                  class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white placeholder-slate-400 text-sm outline-none focus:border-indigo-500 font-medium">
         </div>
 
-        <!-- Descuento mínimo -->
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Filtro de Descuento</label>
           <select id="discountSelect" class="w-full bg-slate-900 border border-slate-600 rounded-xl p-3 text-white font-medium outline-none focus:border-indigo-500 cursor-pointer">
@@ -60,10 +55,7 @@
       </button>
     </div>
 
-    <!-- Indicador de estado -->
     <div id="status" class="text-center text-slate-300 my-6 hidden"></div>
-
-    <!-- Resultados -->
     <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
   </div>
 
