@@ -11,58 +11,58 @@
     <!-- Header -->
     <header class="text-center mb-8">
       <div class="inline-block bg-red-950 border border-red-800 text-red-400 text-xs font-black uppercase px-3 py-1 rounded-full mb-3 tracking-widest animate-pulse">
-        🚨 RADAR DE LIQUIDACIONES Y PRECIOS BUG
+        🚨 DETECTOR DE ERRORES DE CARGA Y PRECIOS BUG
       </div>
-      <h1 class="text-3xl md:text-5xl font-black text-white mb-2">Cazador de Ofertas Reales</h1>
-      <p class="text-neutral-400 text-sm md:text-base">Seleccioná la plataforma y detectá rebajas extremas en segundos</p>
+      <h1 class="text-3xl md:text-5xl font-black text-white mb-2">Cazador de Precios Irrisorios</h1>
+      <p class="text-neutral-400 text-sm md:text-base">Detecta liquidaciones, promociones y errores de precio (ej. comida < $500, 70% a 90% OFF)</p>
     </header>
 
     <!-- Panel de Control y Filtros -->
     <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 md:p-6 mb-8 max-w-4xl mx-auto shadow-2xl">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <!-- Selector de las 8 Plataformas -->
+        <!-- Selector de Plataforma -->
         <div>
           <label class="block text-xs font-bold text-neutral-400 mb-1">PLATAFORMA</label>
           <select id="storeSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="mercadolibre">🟡 MercadoLibre (Promociones)</option>
+            <option value="pedidosya">🔴 PedidosYa (Markets CABA)</option>
+            <option value="rappi">🟠 Rappi (Turbo CABA)</option>
+            <option value="mercadolibre">🟡 MercadoLibre (Outlet y Chollos)</option>
+            <option value="dia">🔴 Supermercados Día (Bugs y 2x1)</option>
             <option value="fravega">🟣 Frávega (Tecno / Electro)</option>
             <option value="carrefour">🔵 Carrefour (Hipermercado)</option>
-            <option value="dia">🔴 Supermercados Día (Almacén)</option>
+            <option value="easy">🟠 Easy (Herramientas / Bazar)</option>
             <option value="coto">🔴 Coto Digital (Ofertas)</option>
-            <option value="easy">🟠 Easy (Herramientas / Hogar)</option>
-            <option value="pedidosya">🔴 PedidosYa (Mercados Express)</option>
-            <option value="rappi">🟠 Rappi (Turbo / Almacén)</option>
           </select>
         </div>
 
         <!-- Filtro de Descuento Mínimo -->
         <div>
-          <label class="block text-xs font-bold text-neutral-400 mb-1">DESCUENTO MÍNIMO</label>
+          <label class="block text-xs font-bold text-neutral-400 mb-1">FILTRO DE OFERTA</label>
           <select id="discountSelect" class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 font-bold">
-            <option value="30">Desde 30% OFF</option>
-            <option value="40" selected>Desde 40% OFF (Recomendado)</option>
+            <option value="0">🔍 Incluir Precios Bug sin Descuento (ej. < $500)</option>
+            <option value="30" selected>Desde 30% OFF</option>
             <option value="50">Desde 50% OFF (Liquidaciones)</option>
-            <option value="70">Desde 70% OFF (Solo gangas y bugs)</option>
+            <option value="70">Solo Gangas Extremas (70%+)</option>
           </select>
         </div>
 
-        <!-- Filtro de Categoría / Palabra opcional -->
+        <!-- Categoría opcional -->
         <div>
-          <label class="block text-xs font-bold text-neutral-400 mb-1">FILTRO / CATEGORÍA (Opcional)</label>
-          <input id="catInput" type="text" placeholder="Ej: heladera, café, taladro..." 
+          <label class="block text-xs font-bold text-neutral-400 mb-1">PALABRA / CATEGORÍA (Opcional)</label>
+          <input id="catInput" type="text" placeholder="Ej: carne, chorizo, café, herramientas..." 
                  class="w-full bg-neutral-950 border border-neutral-700 rounded-xl p-3 text-white outline-none focus:border-red-500 text-sm">
         </div>
       </div>
 
       <button id="scanBtn" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-base shadow-lg shadow-red-950/50 cursor-pointer">
-        <span>⚡</span> Rastrear Ofertas Extremas
+        <span>⚡</span> Rastrear Oportunidades y Precios Bug
       </button>
     </div>
 
     <!-- Indicador de estado -->
     <div id="status" class="text-center text-neutral-400 my-6 hidden"></div>
 
-    <!-- Grilla de Ofertas Encontradas -->
+    <!-- Grilla de Ofertas -->
     <div id="results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
   </div>
 
@@ -82,7 +82,7 @@
       statusDiv.innerHTML = `
         <div class="inline-flex items-center gap-2 text-neutral-300">
           <svg class="animate-spin h-5 w-5 text-red-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Escaneando catálogo oficial de <b>${store.toUpperCase()}</b> buscando rebajas...
+          Escaneando catálogo oficial de <b>${store.toUpperCase()}</b> buscando precios irrisorios...
         </div>
       `;
       statusDiv.classList.remove("hidden");
@@ -94,51 +94,74 @@
         const data = await res.json();
 
         if (!data || data.length === 0) {
-          statusDiv.innerHTML = `❌ No se encontraron ofertas que superen el <b>${minDiscount}% OFF</b> en este momento en esta tienda. Probá seleccionando otra plataforma o bajando el filtro a 30%.`;
+          statusDiv.innerHTML = `❌ No se encontraron ofertas que cumplan el criterio en este momento. Probá seleccionando otra plataforma o dejando el filtro en "Incluir Precios Bug sin Descuento".`;
           return;
         }
 
         const bugCount = data.filter(d => d.isBug).length;
         statusDiv.innerHTML = `
-          Se detectaron <b class="text-white">${data.length}</b> ofertas masivas 
-          ${bugCount > 0 ? `<span class="bg-red-950 border border-red-700 text-red-400 px-2 py-0.5 rounded ml-2 font-bold">🚨 ${bugCount} POSIBLES PRECIOS BUG</span>` : ''}
+          Se detectaron <b class="text-white">${data.length}</b> oportunidades 
+          ${bugCount > 0 ? `<span class="bg-red-950 border border-red-700 text-red-400 px-2 py-0.5 rounded ml-2 font-bold">🚨 ${bugCount} PRECIOS BUG / LIQUIDACIÓN</span>` : ''}
         `;
 
-        resultsDiv.innerHTML = data.map(item => `
-          <div class="bg-neutral-900 border ${item.isBug ? 'border-red-600 shadow-xl shadow-red-950/40' : 'border-neutral-800'} rounded-2xl p-5 flex flex-col justify-between hover:border-neutral-700 transition">
-            <div>
-              <div class="flex justify-between items-center mb-3">
-                <span class="text-xs font-black uppercase tracking-wider px-2 py-1 rounded bg-neutral-800 text-neutral-300">
-                  ${item.tienda}
-                </span>
-                <span class="${item.isBug ? 'bg-red-600 text-white animate-pulse' : 'bg-orange-600 text-white'} text-xs font-black px-2.5 py-1 rounded-md">
-                  -${item.descuento}% OFF
-                </span>
-              </div>
-
-              ${item.isBug ? `
-                <div class="bg-red-950/60 border border-red-800 text-red-400 text-xs font-bold px-2 py-1 rounded mb-3 flex items-center gap-1.5">
-                  <span>🚨</span> Posible Precio Bug / Liquidación Total
+        resultsDiv.innerHTML = data.map(item => {
+          if (item.isDirectLink) {
+            return `
+              <div class="bg-neutral-900 border border-neutral-700 rounded-2xl p-5 flex flex-col justify-between">
+                <div>
+                  <span class="text-xs font-black uppercase px-2 py-1 rounded bg-neutral-800 text-neutral-300">${item.tienda}</span>
+                  <h3 class="font-bold text-base mt-2 mb-3">${item.nombre}</h3>
+                  <p class="text-xs text-neutral-400 mb-4">Coto requiere acceso directo para no bloquear la conexión.</p>
                 </div>
-              ` : ''}
+                <a href="${item.url}" target="_blank" class="block w-full text-center bg-red-600 hover:bg-red-500 py-2.5 rounded-xl text-xs font-black text-white transition">
+                  Abrir Sección de Ofertas en Coto ↗
+                </a>
+              </div>
+            `;
+          }
 
-              <a href="${item.url}" target="_blank" class="font-bold text-sm text-neutral-100 line-clamp-2 hover:text-red-400 transition mb-4" title="${item.nombre}">
-                ${item.nombre}
-              </a>
-            </div>
+          return `
+            <div class="bg-neutral-900 border ${item.isBug ? 'border-red-600 shadow-xl shadow-red-950/50' : 'border-neutral-800'} rounded-2xl p-5 flex flex-col justify-between hover:border-neutral-700 transition">
+              <div>
+                <div class="flex justify-between items-center mb-3">
+                  <span class="text-xs font-black uppercase tracking-wider px-2 py-1 rounded bg-neutral-800 text-neutral-300">
+                    ${item.tienda}
+                  </span>
+                  ${item.descuento > 0 ? `
+                    <span class="${item.isBug ? 'bg-red-600 text-white animate-pulse' : 'bg-orange-600 text-white'} text-xs font-black px-2.5 py-1 rounded-md">
+                      -${item.descuento}% OFF
+                    </span>
+                  ` : `
+                    <span class="bg-red-700 text-white text-xs font-black px-2 py-0.5 rounded">
+                      PRECIO ANORMAL
+                    </span>
+                  `}
+                </div>
 
-            <div class="pt-3 border-t border-neutral-800/80">
-              <div class="flex items-baseline gap-2 mb-3">
-                <span class="text-2xl font-black text-emerald-400">$ ${item.precio.toLocaleString("es-AR")}</span>
-                ${item.precioLista ? `<span class="text-xs text-neutral-500 line-through">$ ${item.precioLista.toLocaleString("es-AR")}</span>` : ''}
+                ${item.isBug ? `
+                  <div class="bg-red-950/70 border border-red-800 text-red-300 text-xs font-bold px-2 py-1 rounded mb-3 flex items-center gap-1.5">
+                    <span>🚨</span> Posible Error de Carga / Precio Irrisorio
+                  </div>
+                ` : ''}
+
+                <a href="${item.url}" target="_blank" class="font-bold text-sm text-neutral-100 line-clamp-2 hover:text-red-400 transition mb-4" title="${item.nombre}">
+                  ${item.nombre}
+                </a>
               </div>
 
-              <a href="${item.url}" target="_blank" class="block w-full text-center bg-neutral-800 hover:bg-neutral-700 py-2 rounded-xl text-xs font-bold text-white transition">
-                Ir a la Oferta ↗
-              </a>
+              <div class="pt-3 border-t border-neutral-800/80">
+                <div class="flex items-baseline gap-2 mb-3">
+                  <span class="text-2xl font-black text-emerald-400">$ ${item.precio.toLocaleString("es-AR")}</span>
+                  ${item.precioLista ? `<span class="text-xs text-neutral-500 line-through">$ ${item.precioLista.toLocaleString("es-AR")}</span>` : ''}
+                </div>
+
+                <a href="${item.url}" target="_blank" class="block w-full text-center bg-neutral-800 hover:bg-neutral-700 py-2 rounded-xl text-xs font-bold text-white transition">
+                  Ver Oferta ↗
+                </a>
+              </div>
             </div>
-          </div>
-        `).join("");
+          `;
+        }).join("");
       } catch (err) {
         statusDiv.innerHTML = "⚠️ Error al consultar el catálogo. Intenta nuevamente.";
       } finally {
