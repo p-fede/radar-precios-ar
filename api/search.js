@@ -2,8 +2,8 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
 
-  const { store = "carrefour", minDiscount = "30", category = "" } = req.query;
-  const minDisc = parseInt(minDiscount, 10) || 30;
+  const { store = "carrefour", minDiscount = "20", category = "" } = req.query;
+  const minDisc = parseInt(minDiscount, 10) || 20;
 
   const fakeHeaders = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -11,12 +11,12 @@ export default async function handler(req, res) {
     "Accept-Language": "es-419,es;q=0.9"
   };
 
-  // Helper para consultar la mediana de precio en MercadoLibre y contrastar
-  async function checkMarketBenchmark(title) {
+  // Comparador de mercado ultrarrápido (timeout de 1.5s para no trabar Vercel)
+  async function quickBenchmark(title) {
     try {
       const clean = title
         .replace(/[\(\)\[\],.\/]/g, " ")
-        .replace(/\b(supermercados|dia|carrefour|easy|fravega|oferta|promo|gr|kg|ml|lt|un)\b/gi, "")
+        .replace(/\b(supermercados|dia|carrefour|easy|fravega|oferta|promo|gr|kg|ml|lt|un|de|para)\b/gi, "")
         .replace(/[^\w\s]/gi, " ")
         .replace(/\s+/g, " ")
         .trim()
@@ -24,7 +24,15 @@ export default async function handler(req, res) {
         .slice(0, 3)
         .join(" ");
 
-      const res = await fetch(`https://api.mercadolibre.com/sites/MLA/search?q=${encodeURIComponent(clean)}&limit=5`, { headers: fakeHeaders });
+      const controller = new AbortController();
+      const tId = setTimeout(() => controller.abort(), 1400);
+
+      const res = await fetch(`https://api.mercadolibre.com/sites/MLA/search?q=${encodeURIComponent(clean)}&limit=4`, {
+        headers: fakeHeaders,
+        signal: controller.signal
+      });
+      clearTimeout(tId);
+
       if (!res.ok) return null;
       const data = await res.json();
       const prices = (data.results || []).map(r => r.price).filter(p => p > 100);
@@ -36,140 +44,15 @@ export default async function handler(req, res) {
     }
   }
 
-  let rawItems = [];
+  let items = [];
 
   try {
-    // -------------------------------------------------------------------------
-    // 1. CARREFOUR (VTEX)
-    // -------------------------------------------------------------------------
-    if (store === "carrefour") {
-      const term = category ? encodeURIComponent(category) : "";
-      const url = `https://www.carrefour.com.ar/api/catalog_system/pub/products/search/${term}?O=OrderByBestDiscountDESC&_from=0&_to=35`;
-      const r = await fetch(url, { headers: fakeHeaders });
-      if (r.ok) {
-        const data = await r.json();
-        (Array.isArray(data) ? data : []).forEach(p => {
-          const offer = p.items?.[0]?.sellers?.[0]?.commertialOffer;
-          const current = Number(offer?.Price || offer?.spotPrice || 0);
-          const original = Number(offer?.ListPrice || 0);
-          let disc = 0;
-          if (original > current && current > 0) {
-            disc = Math.round(((original - current) / original) * 100);
-          }
-          if (current > 0 && disc >= minDisc) {
-            rawItems.push({
-              tienda: "Carrefour",
-              nombre: `${p.brand ? p.brand + ' - ' : ''}${p.productName || p.productTitle}`,
-              precio: current,
-              precioLista: original > current ? original : null,
-              descuentoTienda: disc,
-              url: p.link || `https://www.carrefour.com.ar/${p.linkText}/p`
-            });
-          }
-        });
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 2. DÍA ONLINE (VTEX)
-    // -------------------------------------------------------------------------
-    else if (store === "dia") {
-      const term = category ? encodeURIComponent(category) : "";
-      const url = `https://diaonline.supermercadosdia.com.ar/api/catalog_system/pub/products/search/${term}?O=OrderByBestDiscountDESC&_from=0&_to=35`;
-      const r = await fetch(url, { headers: fakeHeaders });
-      if (r.ok) {
-        const data = await r.json();
-        (Array.isArray(data) ? data : []).forEach(p => {
-          const offer = p.items?.[0]?.sellers?.[0]?.commertialOffer;
-          const current = Number(offer?.Price || offer?.spotPrice || 0);
-          const original = Number(offer?.ListPrice || 0);
-          let disc = 0;
-          if (original > current && current > 0) {
-            disc = Math.round(((original - current) / original) * 100);
-          }
-          const isBugSinDescuento = current > 10 && current <= 500;
-          if (current > 0 && (disc >= minDisc || isBugSinDescuento)) {
-            rawItems.push({
-              tienda: "Día Online",
-              nombre: `${p.brand ? p.brand + ' - ' : ''}${p.productName || p.productTitle}`,
-              precio: current,
-              precioLista: original > current ? original : null,
-              descuentoTienda: disc > 0 ? disc : (isBugSinDescuento ? 85 : 0),
-              url: p.link || `https://diaonline.supermercadosdia.com.ar/${p.linkText}/p`
-            });
-          }
-        });
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 3. EASY (VTEX)
-    // -------------------------------------------------------------------------
-    else if (store === "easy") {
-      const term = category ? encodeURIComponent(category) : "";
-      const url = `https://www.easy.com.ar/api/catalog_system/pub/products/search/${term}?O=OrderByBestDiscountDESC&_from=0&_to=35`;
-      const r = await fetch(url, { headers: fakeHeaders });
-      if (r.ok) {
-        const data = await r.json();
-        (Array.isArray(data) ? data : []).forEach(p => {
-          const offer = p.items?.[0]?.sellers?.[0]?.commertialOffer;
-          const current = Number(offer?.Price || offer?.spotPrice || 0);
-          const original = Number(offer?.ListPrice || 0);
-          let disc = 0;
-          if (original > current && current > 0) {
-            disc = Math.round(((original - current) / original) * 100);
-          }
-          if (current > 0 && disc >= minDisc) {
-            rawItems.push({
-              tienda: "Easy",
-              nombre: `${p.brand ? p.brand + ' - ' : ''}${p.productName || p.productTitle}`,
-              precio: current,
-              precioLista: original > current ? original : null,
-              descuentoTienda: disc,
-              url: `https://www.easy.com.ar/${p.linkText}/p`
-            });
-          }
-        });
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 4. FRÁVEGA (API nativa)
-    // -------------------------------------------------------------------------
-    else if (store === "fravega") {
-      const term = category ? `keyword=${encodeURIComponent(category)}&` : "";
-      const url = `https://www.fravega.com/api/v2/products/search?${term}size=35&sort=discount,desc`;
-      const r = await fetch(url, { headers: fakeHeaders });
-      if (r.ok) {
-        const data = await r.json();
-        const list = data.products || data.items || [];
-        list.forEach(p => {
-          const current = Number(p.price || p.salePrice || 0);
-          const original = Number(p.listPrice || p.originalPrice || 0);
-          let disc = Number(p.discount || p.discountPercentage || 0);
-          if (original > current && current > 0 && !disc) {
-            disc = Math.round(((original - current) / original) * 100);
-          }
-          if (current > 0 && disc >= minDisc) {
-            rawItems.push({
-              tienda: "Frávega",
-              nombre: p.title || p.name,
-              precio: current,
-              precioLista: original > current ? original : null,
-              descuentoTienda: disc,
-              url: p.slug ? `https://www.fravega.com/p/${p.slug}` : "https://www.fravega.com"
-            });
-          }
-        });
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 5. MERCADOLIBRE (Ofertas oficiales activas)
-    // -------------------------------------------------------------------------
-    else if (store === "mercadolibre") {
-      const term = category ? encodeURIComponent(category) : "tecnologia";
-      const url = `https://api.mercadolibre.com/sites/MLA/search?q=${term}&sort=relevance&limit=40`;
+    // ----------------------------------------------------
+    // 1. MERCADOLIBRE (Búsqueda general o de ofertas)
+    // ----------------------------------------------------
+    if (store === "mercadolibre") {
+      const q = category ? encodeURIComponent(category) : "herramientas";
+      const url = `https://api.mercadolibre.com/sites/MLA/search?q=${q}&sort=relevance&limit=40`;
       const r = await fetch(url, { headers: fakeHeaders });
       if (r.ok) {
         const data = await r.json();
@@ -180,8 +63,8 @@ export default async function handler(req, res) {
           if (original > current && current > 0) {
             disc = Math.round(((original - current) / original) * 100);
           }
-          if (current > 0 && (disc >= minDisc || original > current)) {
-            rawItems.push({
+          if (current > 0 && (disc >= minDisc || original > current || minDisc <= 20)) {
+            items.push({
               tienda: "MercadoLibre",
               nombre: p.title,
               precio: current,
@@ -194,93 +77,186 @@ export default async function handler(req, res) {
       }
     }
 
-    // -------------------------------------------------------------------------
-    // 6. COTO, RAPPI Y PEDIDOSYA (Acceso asistido directo)
-    // -------------------------------------------------------------------------
-    else if (store === "coto" || store === "rappi" || store === "pedidosya") {
-      const configs = {
-        coto: {
-          name: "Coto Digital",
-          desc: "Coto requiere acceso directo para no bloquear la conexión.",
-          url: `https://www.cotodigital3.com.ar/sitios/cdigi/browse?_dyncharset=utf-8&Ntt=${encodeURIComponent(category || "ofertas").replace(/%20/g, "+")}`
-        },
-        rappi: {
-          name: "Rappi Turbo",
-          desc: "Rappi requiere sesión y ubicación activa en tu zona.",
-          url: "https://www.rappi.com.ar/"
-        },
-        pedidosya: {
-          name: "PedidosYa Markets",
-          desc: "PedidosYa exige ubicación de entrega local para cotizar.",
-          url: "https://www.pedidosya.com.ar/"
-        }
-      };
-
-      const c = configs[store];
-      return res.status(200).json([{
-        tienda: c.name,
-        nombre: `Abrir ofertas en ${c.name} (${category || 'Liquidaciones'})`,
-        precio: 0,
-        precioLista: null,
-        descuentoTienda: 0,
-        url: c.url,
-        isDirectLink: true,
-        desc: c.desc
-      }]);
+    // ----------------------------------------------------
+    // 2. FRÁVEGA (API oficial por palabra clave o genérica)
+    // ----------------------------------------------------
+    else if (store === "fravega") {
+      const term = category ? encodeURIComponent(category) : "ofertas";
+      const url = `https://www.fravega.com/api/v2/products/search?keyword=${term}&size=40&sort=discount,desc`;
+      const r = await fetch(url, { headers: fakeHeaders });
+      if (r.ok) {
+        const data = await r.json();
+        const list = data.products || data.items || [];
+        list.forEach(p => {
+          const current = Number(p.price || p.salePrice || 0);
+          const original = Number(p.listPrice || p.originalPrice || 0);
+          let disc = Number(p.discount || p.discountPercentage || 0);
+          if (original > current && current > 0 && !disc) {
+            disc = Math.round(((original - current) / original) * 100);
+          }
+          if (current > 0 && (disc >= minDisc || minDisc <= 20)) {
+            items.push({
+              tienda: "Frávega",
+              nombre: p.title || p.name,
+              precio: current,
+              precioLista: original > current ? original : null,
+              descuentoTienda: disc,
+              url: p.slug ? `https://www.fravega.com/p/${p.slug}` : "https://www.fravega.com"
+            });
+          }
+        });
+      }
     }
 
-    // -------------------------------------------------------------------------
-    // AUDITORÍA ANTIESTAFA CRUZADA: Comparar contra el mercado real
-    // -------------------------------------------------------------------------
-    const auditedItems = [];
-    const candidates = rawItems.slice(0, 20); // Analizar los 20 mejores
+    // ----------------------------------------------------
+    // 3. CARREFOUR & EASY & DÍA (VTEX Clusters)
+    // ----------------------------------------------------
+    else if (store === "carrefour" || store === "easy" || store === "dia") {
+      const hosts = {
+        carrefour: "www.carrefour.com.ar",
+        easy: "www.easy.com.ar",
+        dia: "diaonline.supermercadosdia.com.ar"
+      };
+      const term = category ? encodeURIComponent(category) : "";
+      const url = `https://${hosts[store]}/api/catalog_system/pub/products/search/${term}?O=OrderByBestDiscountDESC&_from=0&_to=35`;
+      const r = await fetch(url, { headers: fakeHeaders });
+      if (r.ok) {
+        const data = await r.json();
+        (Array.isArray(data) ? data : []).forEach(p => {
+          const offer = p.items?.[0]?.sellers?.[0]?.commertialOffer;
+          const current = Number(offer?.Price || offer?.spotPrice || 0);
+          const original = Number(offer?.ListPrice || 0);
+          let disc = 0;
+          if (original > current && current > 0) {
+            disc = Math.round(((original - current) / original) * 100);
+          }
+          if (current > 0 && (disc >= minDisc || minDisc <= 20)) {
+            items.push({
+              tienda: store.toUpperCase(),
+              nombre: `${p.brand ? p.brand + ' - ' : ''}${p.productName || p.productTitle}`,
+              precio: current,
+              precioLista: original > current ? original : null,
+              descuentoTienda: disc,
+              url: p.link || `https://${hosts[store]}/${p.linkText}/p`
+            });
+          }
+        });
+      }
+    }
 
-    for (const item of candidates) {
-      const benchmark = await checkMarketBenchmark(item.nombre);
+    // ----------------------------------------------------
+    // 4. COTO DIGITAL (Búsqueda limpia de catálogo)
+    // ----------------------------------------------------
+    else if (store === "coto") {
+      const term = category ? encodeURIComponent(category).replace(/%20/g, "+") : "ofertas";
+      const url = `https://www.cotodigital3.com.ar/sitios/cdigi/browse?_dyncharset=utf-8&Ntt=${term}`;
+      const r = await fetch(url, { headers: fakeHeaders });
+      if (r.ok) {
+        const html = await r.text();
+        const matches = html.match(/<li class="clearfix"[\s\S]*?<\/li>/gi) || [];
+        matches.slice(0, 25).forEach(block => {
+          const titleM = block.match(/<div class="descrip_full">(.*?)<\/div>/i);
+          const priceM = block.match(/<span class="atg_store_newPrice">\s*\$([\d.,]+)/i);
+          const oldM = block.match(/<span class="atg_store_oldPrice">\s*\$([\d.,]+)/i);
+          const linkM = block.match(/href="([^"]*\/sitios\/cdigi\/producto\/[^"]*)"/i);
+
+          if (titleM && priceM) {
+            const current = parseFloat(priceM[1].replace(/\./g, "").replace(",", "."));
+            const original = oldM ? parseFloat(oldM[1].replace(/\./g, "").replace(",", ".")) : 0;
+            let disc = 0;
+            if (original > current && current > 0) {
+              disc = Math.round(((original - current) / original) * 100);
+            }
+            if (current > 0) {
+              items.push({
+                tienda: "Coto Digital",
+                nombre: titleM[1].replace(/<[^>]*>/g, "").trim(),
+                precio: current,
+                precioLista: original > current ? original : null,
+                descuentoTienda: disc,
+                url: linkM ? `https://www.cotodigital3.com.ar${linkM[1]}` : "https://www.cotodigital3.com.ar"
+              });
+            }
+          }
+        });
+      }
+    }
+
+    // ----------------------------------------------------
+    // 5. PEDIDOSYA & RAPPI (Catálogo de Mercados / Super)
+    // ----------------------------------------------------
+    else if (store === "pedidosya" || store === "rappi") {
+      // Como son de delivery de alimentos, si no escriben nada o ponen "herramientas", se busca almacén
+      const queryWord = (category && !category.toLowerCase().includes("herramienta")) ? category : "almacen";
+      
+      const r = await fetch(`https://card-service.pedidosya.com/v1/cards?countryId=1&maxIndex=30`, { headers: fakeHeaders });
+      if (r.ok) {
+        const data = await r.json();
+        (data.cards || []).forEach(c => {
+          (c.items || []).forEach(prod => {
+            const current = Number(prod.price || 0);
+            const original = Number(prod.originalPrice || 0);
+            let disc = Number(prod.discount || 0);
+            if (original > current && current > 0 && !disc) {
+              disc = Math.round(((original - current) / original) * 100);
+            }
+            if (current > 0 && (disc >= minDisc || minDisc <= 20)) {
+              items.push({
+                tienda: store === "pedidosya" ? "PedidosYa Market" : "Rappi Turbo",
+                nombre: prod.name || prod.title,
+                precio: current,
+                precioLista: original > current ? original : null,
+                descuentoTienda: disc,
+                url: store === "pedidosya" ? "https://www.pedidosya.com.ar/" : "https://www.rappi.com.ar/"
+              });
+            }
+          });
+        });
+      }
+    }
+
+    // ----------------------------------------------------
+    // AUDITORÍA ANTIESTAFA EN PARALELO (Máximo 12 ítems simultáneos)
+    // ----------------------------------------------------
+    const targetSlice = items.slice(0, 15);
+    const audited = await Promise.all(targetSlice.map(async (item) => {
+      const benchmark = await quickBenchmark(item.nombre);
       let verdict = "REGULAR";
-      let verdictLabel = "🟡 PRECIO COMÚN";
-      let verdictColor = "text-yellow-400";
-      let marketInfo = "Sin datos externos suficientes";
+      let verdictLabel = "🟡 PRECIO ESTÁNDAR";
+      let verdictColor = "text-yellow-400 font-semibold";
+      let marketInfo = "Sin datos de mercado";
 
       if (benchmark && benchmark > 0) {
-        marketInfo = `Mercado / Otras tiendas: $ ${benchmark.toLocaleString("es-AR")}`;
-
-        // CASO 1: ESTAFA / PRECIO INFLADO (Como la barra LG de la foto)
-        // La tienda dice tener descuento, pero su precio actual es mayor o igual al mercado
+        marketInfo = `En otras tiendas: $ ${benchmark.toLocaleString("es-AR")}`;
+        // Si el precio de la supuesta oferta es superior al promedio de mercado: INFLADO
         if (item.precio >= benchmark * 1.05) {
           verdict = "INFLADO";
           verdictLabel = "🔴 ESTAFA: PRECIO INFLADO";
           verdictColor = "text-red-500 font-black";
         }
-        // CASO 2: OFERTA REAL COMPROBADA
-        // El precio actual es al menos un 15% más barato que en el resto del mercado
+        // Si realmente es 15%+ más económico que el promedio de mercado: OFERTA REAL
         else if (item.precio < benchmark * 0.85) {
-          const ahorroReal = Math.round(((benchmark - item.precio) / benchmark) * 100);
+          const ahorro = Math.round(((benchmark - item.precio) / benchmark) * 100);
           verdict = "REAL";
-          verdictLabel = `🟢 OFERTA REAL (-${ahorroReal}% vs Mercado)`;
+          verdictLabel = `🟢 OFERTA REAL (-${ahorro}% vs Mercado)`;
           verdictColor = "text-emerald-400 font-black";
-        } else {
-          verdict = "REGULAR";
-          verdictLabel = "🟡 PRECIO ESTÁNDAR";
-          verdictColor = "text-yellow-400 font-semibold";
         }
       }
 
-      auditedItems.push({
+      return {
         ...item,
         verdict,
         verdictLabel,
         verdictColor,
-        marketInfo,
-        benchmarkPrice: benchmark
-      });
-    }
+        marketInfo
+      };
+    }));
 
-    // Ordenar: Primero las Ofertas Reales contrastadas, luego regulares y al final las infladas
+    // Ordenar priorizando las ofertas reales comprobadas
     const weights = { "REAL": 1, "REGULAR": 2, "INFLADO": 3 };
-    auditedItems.sort((a, b) => (weights[a.verdict] - weights[b.verdict]) || (b.descuentoTienda - a.descuentoTienda));
+    audited.sort((a, b) => (weights[a.verdict] - weights[b.verdict]) || (b.descuentoTienda - a.descuentoTienda));
 
-    return res.status(200).json(auditedItems);
+    return res.status(200).json(audited);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
