@@ -13,10 +13,15 @@ export default async function handler(req, res) {
     "Accept-Language": "es-AR,es;q=0.9"
   };
 
-  async function fetchCatalog(domain, storeName, limit = 30) {
+  async function fetchCatalog(domain, storeName, limit = 35) {
     try {
       const url = `https://${domain}/api/catalog_system/pub/products/search/${searchPath}O=OrderByBestDiscountDESC&_from=0&_to=${limit}`;
-      const r = await fetch(url, { headers: fakeHeaders });
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 3500);
+
+      const r = await fetch(url, { headers: fakeHeaders, signal: controller.signal });
+      clearTimeout(tid);
+
       if (!r.ok) return [];
       const data = await r.json();
       if (!Array.isArray(data)) return [];
@@ -28,7 +33,7 @@ export default async function handler(req, res) {
         const original = Number(offer?.ListPrice || 0);
         let disc = original > current && current > 0 ? Math.round(((original - current) / original) * 100) : 0;
 
-        // Detección 2x1 y promociones en Día
+        // Detección de promociones 2x1 y 2do al 70%
         const teasers = [...(offer?.discountHighlights || []), ...(offer?.teasers || [])];
         for (const t of teasers) {
           const tName = (t.name || "").toLowerCase();
@@ -37,8 +42,6 @@ export default async function handler(req, res) {
         }
 
         if (current <= 0) return null;
-
-        // Es BUG si el precio es menor a $1.500 en alimentos/bazar o el descuento supera el 65%
         const isBug = (current < 1500 && current > 10 && disc >= 30) || disc >= 65;
 
         return {
@@ -66,7 +69,6 @@ export default async function handler(req, res) {
     } else if (store === "easy") {
       items = await fetchCatalog("www.easy.com.ar", "Easy", 40);
     } else if (store === "locales") {
-      // Consulta en paralelo a tiendas locales y pymes
       const targets = [
         { domain: "www.cetrogar.com.ar", name: "Cetrogar" },
         { domain: "www.megatone.net", name: "Megatone" },
@@ -81,15 +83,11 @@ export default async function handler(req, res) {
       });
     }
 
-    // Filtrar por descuento mínimo si se seleccionó
     if (minDisc > 0) {
       items = items.filter(it => it.descuento >= minDisc || it.isBug);
     }
 
-    // ORDENAMIENTO ESTRICTO:
-    // 1° BUGS / GANGA primero
-    // 2° MAYOR % DE DESCUENTO (-80%, -70%, -50%...)
-    // 3° Precio más bajo en caso de empate
+    // Ordenamiento prioritario: Bugs arriba, luego mayor % de descuento, luego menor precio
     items.sort((a, b) => {
       if (b.isBug !== a.isBug) return (b.isBug ? 1 : 0) - (a.isBug ? 1 : 0);
       if (b.descuento !== a.descuento) return b.descuento - a.descuento;
