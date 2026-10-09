@@ -24,6 +24,17 @@ export default async function handler(req, res) {
   const minDisc = Math.max(0, Math.min(100, parseInt(minDiscount, 10) || 0));
 
   try {
+    // ---- Lista de tiendas (instantánea, sin consultar nada) ----
+    if (mode === "stores") {
+      const mlListo = Boolean(process.env.ML_ACCESS_TOKEN || (process.env.ML_CLIENT_ID && dbEnabled));
+      const stores = DIRECTORY
+        .filter(s => !["auto", "extension"].includes(s.platform) && (s.platform !== "mercadolibre" || mlListo))
+        .map(s => ({ id: s.id, name: s.name, rubro: s.rubro, url: s.url, ok: true, platform: s.platform }));
+      const extension = DIRECTORY.filter(s => s.platform === "extension").map(s => ({ id: s.id, name: s.name, rubro: s.rubro, url: s.url }));
+      res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
+      return res.status(200).json({ total: stores.length, activas: stores.length, historial: dbEnabled, stores, extension });
+    }
+
     // ---- Estado de cada tienda ----
     if (mode === "health") {
       const servidor = DIRECTORY.filter(s => s.platform !== "extension");
