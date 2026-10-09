@@ -285,7 +285,7 @@
         <div class="p-4 flex flex-col justify-between flex-1">
           <div>
             ${veredictoHTML(item)}
-            ${item.promo ? `<div class="mb-2"><span class="text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded">🎁 ${esc(item.promo)} (promo por cantidad)</span></div>` : ""}
+            ${item.promo ? `<div class="mb-2"><span class="text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded">🎁 ${esc(item.promo)}</span></div>` : ""}
             <a href="${url}" target="_blank" rel="noopener noreferrer" class="font-semibold text-xs md:text-sm text-slate-200 group-hover:text-indigo-400 transition line-clamp-2 mb-3" title="${nombre}">${nombre}</a>
           </div>
           <div class="pt-3 border-t border-slate-800/80">
@@ -310,7 +310,7 @@
         bug: ["🚨 Bug confirmado", "bg-rose-950 text-rose-300 border-rose-800"],
         real: ["✅ Oferta real", "bg-emerald-950 text-emerald-300 border-emerald-800"],
         inflado: ["⚠️ Descuento inflado", "bg-amber-950 text-amber-300 border-amber-800"],
-        sinConfirmar: ["❔ Posible bug (sin confirmar)", "bg-slate-800 text-rose-200 border-rose-900"],
+        sinConfirmar: ["❔ Descuento muy alto (sin confirmar)", "bg-slate-800 text-rose-200 border-rose-900"],
         normal: ["📊 Precio de mercado", "bg-slate-800 text-slate-300 border-slate-700"],
         sinDatos: ["ℹ️ Sin comparar", "bg-slate-800 text-slate-400 border-slate-700"]
       };

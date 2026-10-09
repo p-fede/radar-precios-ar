@@ -69,7 +69,7 @@ export default async function handler(req, res) {
     await Promise.all([annotate(items, { budgetMs: MARKET_BUDGET }), savePrices(items, 2500)]);
 
     if (minDisc > 0) items = items.filter(it => it.descuento >= minDisc || it.isBug || it.veredicto?.tipo === "real");
-    const peso = { bug: 5, real: 4, sinConfirmar: 3, normal: 2, sinDatos: 2, inflado: 0 };
+    const peso = { bug: 5, real: 4, sinConfirmar: 2, normal: 2, sinDatos: 2, inflado: 0 };
     items.sort((a, b) =>
       ((peso[b.veredicto?.tipo] ?? 2) - (peso[a.veredicto?.tipo] ?? 2)) ||
       ((b.mercado?.bajoMercado ?? -99) - (a.mercado?.bajoMercado ?? -99)) ||
