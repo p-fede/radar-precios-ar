@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     pool = pool.filter(s => s.platform !== "extension");
     if (!pool.length) return res.status(400).json({ error: "No hay tiendas válidas para consultar." });
 
-    const perStore = pool.length === 1 ? 100 : pool.length <= 6 ? 30 : 15;
+    const perStore = pool.length === 1 ? 100 : pool.length <= 6 ? 30 : 8;
     const results = await runPool(pool, s => queryStore(s, rawQ, perStore), CONCURRENCY, GLOBAL_BUDGET);
 
     let items = [];
@@ -70,10 +70,26 @@ export default async function handler(req, res) {
 
     if (minDisc > 0) items = items.filter(it => it.descuento >= minDisc || it.isBug || it.veredicto?.tipo === "real");
     const peso = { bug: 5, real: 4, sinConfirmar: 2, normal: 2, sinDatos: 2, inflado: 0 };
-    items.sort((a, b) =>
+    const orden = (a, b) =>
       ((peso[b.veredicto?.tipo] ?? 2) - (peso[a.veredicto?.tipo] ?? 2)) ||
       ((b.mercado?.bajoMercado ?? -99) - (a.mercado?.bajoMercado ?? -99)) ||
-      (b.descuento - a.descuento) || (b.ahorro - a.ahorro));
+      (b.descuento - a.descuento) || (b.ahorro - a.ahorro);
+    items.sort(orden);
+    if (pool.length > 6) {
+      // Varias tiendas: primero bugs y ofertas reales confirmadas; el resto intercalado por tienda
+      // para que ninguna tienda tape a las demás.
+      const destacados = items.filter(i => i.veredicto?.tipo === "bug" || i.veredicto?.tipo === "real");
+      const colas = new Map();
+      for (const i of items) {
+        if (destacados.includes(i)) continue;
+        if (!colas.has(i.tiendaId)) colas.set(i.tiendaId, []);
+        colas.get(i.tiendaId).push(i);
+      }
+      const resto = [];
+      const listas = [...colas.values()];
+      while (listas.some(l => l.length)) for (const l of listas) if (l.length) resto.push(l.shift());
+      items = [...destacados, ...resto];
+    }
 
     const fallidas = results.filter(r => r.error);
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
@@ -83,7 +99,7 @@ export default async function handler(req, res) {
       respondieron: pool.length - fallidas.length,
       historial: dbEnabled,
       fallidas: fallidas.map(r => ({ id: r.store.id, name: r.store.name, ...(debug ? { motivo: r.error } : {}) })),
-      results: items.slice(0, 400)
+      results: items.slice(0, 600)
     });
   } catch (err) {
     console.error(err);
