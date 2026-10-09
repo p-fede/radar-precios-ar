@@ -211,8 +211,10 @@ async function tiendanube(store, q, limit) {
   while ((m = re.exec(html)) && out.length < limit) {
     let variants;
     try { variants = JSON.parse(decodeEntities(m[1])); } catch { continue; }
-    const tail = html.slice(m.index, m.index + 6000);
-    const link = tail.match(/href="((?:https?:)?\/\/[^"]*\/productos\/[^"]+|\/productos\/[^"]+)"/)?.[1];
+    const tail = html.slice(re.lastIndex, re.lastIndex + 8000); // después del atributo: con muchos talles, data-variants solo ocupa miles de caracteres
+    const linkRe = /href="((?:https?:)?\/\/[^"]*\/productos\/[^"]+|\/productos\/[^"]+)"/;
+    const before = html.slice(Math.max(0, m.index - 3000), m.index);
+    const link = tail.match(linkRe)?.[1] || [...before.matchAll(new RegExp(linkRe.source, "g"))].pop()?.[1];
     if (!link) continue;
     const full = abs(store.url, httpsUrl(link));
     const key = full.replace(/^https?:\/\/(www\.)?/, "");
