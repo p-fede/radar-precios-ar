@@ -94,6 +94,38 @@
     let activeStores = [];   // tiendas que pasaron el chequeo de salud
     let caidas = [];
     let reqSeq = 0;
+    let extStores = [];      // tiendas que bloquean servidores (las consulta la extensión de Chrome)
+
+    // ---------- Puente con la extensión de Chrome ----------
+    // La extensión (content script en este sitio) responde mensajes {source:"radar-web"} con {source:"radar-ext"}.
+    let extDisponible = false;
+    const extPendientes = new Map();
+    window.addEventListener("message", (ev) => {
+      if (ev.source !== window || ev.data?.source !== "radar-ext") return;
+      if (ev.data.type === "pong") { extDisponible = true; return; }
+      if (ev.data.type === "results" && extPendientes.has(ev.data.reqId)) {
+        extPendientes.get(ev.data.reqId)(Array.isArray(ev.data.items) ? ev.data.items : []);
+        extPendientes.delete(ev.data.reqId);
+      }
+    });
+    window.postMessage({ source: "radar-web", type: "ping" }, location.origin);
+
+    function buscarConExtension(stores, q, timeoutMs = 15000) {
+      if (!extDisponible || !stores.length) return Promise.resolve([]);
+      const reqId = Math.random().toString(36).slice(2);
+      return new Promise(resolve => {
+        extPendientes.set(reqId, resolve);
+        window.postMessage({ source: "radar-web", type: "search", reqId, q, stores }, location.origin);
+        setTimeout(() => { if (extPendientes.has(reqId)) { extPendientes.delete(reqId); resolve([]); } }, timeoutMs);
+      });
+    }
+    // Normaliza lo que manda la extensión (no confiamos en su forma)
+    const limpiarItemExt = (x) => (x && x.nombre && Number(x.precio) > 0) ? {
+      tienda: String(x.tienda || ""), tiendaId: String(x.tiendaId || ""), nombre: String(x.nombre),
+      precio: Number(x.precio), precioLista: Number(x.precioLista) > Number(x.precio) ? Number(x.precioLista) : null,
+      descuento: Number(x.descuento) || 0, ahorro: Number(x.ahorro) || 0, isBug: Boolean(x.isBug),
+      img: String(x.img || ""), url: String(x.url || ""), ean: x.ean ? String(x.ean) : null, viaExtension: true
+    } : null;
 
     // ---------- helpers seguros ----------
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -120,6 +152,7 @@
         const j = await r.json();
         activeStores = j.stores.filter(s => s.ok);
         caidas = j.stores.filter(s => !s.ok);
+        extStores = j.extension || [];
       } catch (e) {
         showStatus(box("No se pudo verificar el estado de las tiendas. Recargá la página en unos segundos.", "rose"));
         return false;
@@ -193,15 +226,24 @@
 
       try {
         const params = new URLSearchParams({ ids: ids.join(","), q, minDiscount: discSelect.value });
-        const res = await fetch(`/api/search?${params}`);
+        const extObjetivo = elegida !== "todas" ? [] : (activeRubro === "todos" ? extStores : extStores.filter(s => s.rubro === activeRubro));
+        const [res, extItems] = await Promise.all([
+          fetch(`/api/search?${params}`),
+          buscarConExtension(extObjetivo, q)
+        ]);
         const json = await res.json().catch(() => ({}));
         if (seq !== reqSeq) return; // llegó una respuesta vieja: la ignoramos
         if (!res.ok) throw new Error(json.error || "HTTP " + res.status);
 
-        const data = json.results || [];
+        const minD = Number(discSelect.value) || 0;
+        const deExt = extItems.map(limpiarItemExt).filter(x => x && (x.descuento >= minD || x.isBug));
+        const data = [...(json.results || []), ...deExt].sort((a, b) => (b.isBug - a.isBug) || (b.descuento - a.descuento));
         const fallidas = json.fallidas || [];
         footerInfo.textContent = `Respondieron ${json.respondieron} de ${json.consultadas} tiendas consultadas` +
-          (fallidas.length ? ` · sin respuesta ahora: ${fallidas.map(f => f.name).join(", ")}` : "");
+          (fallidas.length ? ` · sin respuesta ahora: ${fallidas.map(f => f.name).join(", ")}` : "") +
+          (extObjetivo.length ? (extDisponible
+            ? ` · ${deExt.length} resultados vía tu extensión (${extObjetivo.map(s => s.name).join(", ")})`
+            : ` · ${extObjetivo.length} tiendas (${extObjetivo.map(s => s.name).join(", ")}) solo se ven con la extensión de RadarBug abierta`) : "");
 
         if (!data.length) {
           showStatus(box(q
@@ -243,6 +285,8 @@
         <div class="p-4 flex flex-col justify-between flex-1">
           <div>
             ${item.isBug ? `<div class="mb-2"><span class="text-[10px] font-black uppercase tracking-wider bg-rose-950 text-rose-300 border border-rose-800 px-2 py-0.5 rounded inline-block animate-pulse">🚨 Precio bug / ganga</span></div>` : ""}
+            ${veredictoHTML(item)}
+            ${item.promo ? `<div class="mb-2"><span class="text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded">🎁 ${esc(item.promo)} (promo por cantidad)</span></div>` : ""}
             <a href="${url}" target="_blank" rel="noopener noreferrer" class="font-semibold text-xs md:text-sm text-slate-200 group-hover:text-indigo-400 transition line-clamp-2 mb-3" title="${nombre}">${nombre}</a>
           </div>
           <div class="pt-3 border-t border-slate-800/80">
@@ -250,12 +294,56 @@
               <span class="text-lg md:text-xl font-black text-emerald-400">${money(item.precio)}</span>
               ${item.precioLista ? `<span class="text-xs text-slate-500 line-through">${money(item.precioLista)}</span>` : ""}
             </div>
-            ${item.ahorro > 0 ? `<div class="text-[11px] text-slate-400 mb-3">Ahorrás: <b class="text-emerald-400">${money(item.ahorro)}</b></div>` : `<div class="h-4 mb-3"></div>`}
+            ${item.ahorro > 0 ? `<div class="text-[11px] text-slate-400 mb-2">Ahorrás: <b class="text-emerald-400">${money(item.ahorro)}</b></div>` : `<div class="h-4 mb-2"></div>`}
+            ${comparacionHTML(item)}
+            ${item.ean ? `<button data-ean="${esc(item.ean)}" class="cmp-btn w-full text-[11px] text-indigo-300 hover:text-indigo-200 font-semibold mb-2 text-left">🔎 Comparar en otras tiendas</button><div class="cmp-out text-[11px] mb-2"></div>` : ""}
             <a href="${url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 text-slate-200 hover:text-white py-2 rounded-xl text-xs font-bold transition">Ver oferta ↗</a>
           </div>
         </div>
       </div>`;
     }
+
+    function veredictoHTML(item) {
+      const v = item.veredicto;
+      if (!v || v.tipo === "nuevo") return "";
+      const estilos = {
+        real: ["✅ Oferta real", "bg-emerald-950 text-emerald-300 border-emerald-800"],
+        inflado: ["⚠️ Descuento inflado", "bg-amber-950 text-amber-300 border-amber-800"],
+        normal: ["📊 Precio habitual", "bg-slate-800 text-slate-300 border-slate-700"]
+      };
+      const [label, cls] = estilos[v.tipo] || estilos.normal;
+      return `<div class="mb-2" title="${esc(v.texto)}"><span class="text-[10px] font-bold border px-2 py-0.5 rounded ${cls}">${label}</span><div class="text-[10px] text-slate-500 mt-1">${esc(v.texto)}</div></div>`;
+    }
+
+    function comparacionHTML(item) {
+      const c = item.comparacion;
+      if (!c) return "";
+      if (c.tipo === "masBarato") {
+        return `<a href="${esc(safeUrl(c.url))}" target="_blank" rel="noopener noreferrer" class="block text-[11px] bg-sky-950 border border-sky-800 text-sky-300 rounded-lg px-2 py-1 mb-2 hover:bg-sky-900">💡 ${money(c.diferencia)} más barato en <b>${esc(c.tienda)}</b> (${money(c.precio)})</a>`;
+      }
+      return `<div class="text-[11px] text-emerald-400 mb-2">🏆 Mejor precio entre ${Number(c.tiendasComparadas) + 1} tiendas</div>`;
+    }
+
+    // Comparar un producto por código de barras en todas las tiendas
+    resultsDiv.addEventListener("click", async (e) => {
+      const btn = e.target.closest(".cmp-btn");
+      if (!btn) return;
+      const out = btn.nextElementSibling;
+      btn.disabled = true;
+      out.innerHTML = `<span class="text-slate-400">Buscando en otras tiendas…</span>`;
+      try {
+        const r = await fetch(`/api/compare?ean=${encodeURIComponent(btn.dataset.ean)}`);
+        const j = await r.json();
+        const ofs = j.ofertas || [];
+        out.innerHTML = ofs.length <= 1
+          ? `<span class="text-slate-400">No lo encontramos en otras tiendas.</span>`
+          : `<ul class="space-y-0.5">${ofs.slice(0, 6).map((o, i) => `<li><a class="${i === 0 ? "text-emerald-400 font-bold" : "text-slate-300"} hover:underline" href="${esc(safeUrl(o.url))}" target="_blank" rel="noopener noreferrer">${money(o.precio)} · ${esc(o.tienda)}</a></li>`).join("")}</ul>`;
+      } catch {
+        out.innerHTML = `<span class="text-rose-300">No se pudo comparar ahora.</span>`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     // ---------- eventos ----------
     searchBtn.addEventListener("click", ejecutar);
