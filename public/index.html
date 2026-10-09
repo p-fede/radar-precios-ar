@@ -237,7 +237,7 @@
 
         const minD = Number(discSelect.value) || 0;
         const deExt = extItems.map(limpiarItemExt).filter(x => x && (x.descuento >= minD || x.isBug));
-        const data = [...(json.results || []), ...deExt].sort((a, b) => (b.isBug - a.isBug) || (b.descuento - a.descuento));
+        const data = [...(json.results || []), ...deExt]; // el servidor ya ordena por veredicto de mercado
         const fallidas = json.fallidas || [];
         footerInfo.textContent = `Respondieron ${json.respondieron} de ${json.consultadas} tiendas consultadas` +
           (fallidas.length ? ` · sin respuesta ahora: ${fallidas.map(f => f.name).join(", ")}` : "") +
@@ -284,7 +284,6 @@
         </div>
         <div class="p-4 flex flex-col justify-between flex-1">
           <div>
-            ${item.isBug ? `<div class="mb-2"><span class="text-[10px] font-black uppercase tracking-wider bg-rose-950 text-rose-300 border border-rose-800 px-2 py-0.5 rounded inline-block animate-pulse">🚨 Precio bug / ganga</span></div>` : ""}
             ${veredictoHTML(item)}
             ${item.promo ? `<div class="mb-2"><span class="text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded">🎁 ${esc(item.promo)} (promo por cantidad)</span></div>` : ""}
             <a href="${url}" target="_blank" rel="noopener noreferrer" class="font-semibold text-xs md:text-sm text-slate-200 group-hover:text-indigo-400 transition line-clamp-2 mb-3" title="${nombre}">${nombre}</a>
@@ -295,6 +294,7 @@
               ${item.precioLista ? `<span class="text-xs text-slate-500 line-through">${money(item.precioLista)}</span>` : ""}
             </div>
             ${item.ahorro > 0 ? `<div class="text-[11px] text-slate-400 mb-2">Ahorrás: <b class="text-emerald-400">${money(item.ahorro)}</b></div>` : `<div class="h-4 mb-2"></div>`}
+            ${item.listaSospechosa ? `<div class="text-[10px] text-slate-500 mb-2" title="La tienda publica un precio tachado de ${money(item.listaSospechosa)}, que no es creíble">Precio tachado de la tienda ignorado (dato erróneo)</div>` : ""}
             ${comparacionHTML(item)}
             ${item.ean ? `<button data-ean="${esc(item.ean)}" class="cmp-btn w-full text-[11px] text-indigo-300 hover:text-indigo-200 font-semibold mb-2 text-left">🔎 Comparar en otras tiendas</button><div class="cmp-out text-[11px] mb-2"></div>` : ""}
             <a href="${url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 text-slate-200 hover:text-white py-2 rounded-xl text-xs font-bold transition">Ver oferta ↗</a>
@@ -305,14 +305,18 @@
 
     function veredictoHTML(item) {
       const v = item.veredicto;
-      if (!v || v.tipo === "nuevo") return "";
+      if (!v || !v.texto) return "";
       const estilos = {
+        bug: ["🚨 Bug confirmado", "bg-rose-950 text-rose-300 border-rose-800"],
         real: ["✅ Oferta real", "bg-emerald-950 text-emerald-300 border-emerald-800"],
         inflado: ["⚠️ Descuento inflado", "bg-amber-950 text-amber-300 border-amber-800"],
-        normal: ["📊 Precio habitual", "bg-slate-800 text-slate-300 border-slate-700"]
+        sinConfirmar: ["❔ Posible bug (sin confirmar)", "bg-slate-800 text-rose-200 border-rose-900"],
+        normal: ["📊 Precio de mercado", "bg-slate-800 text-slate-300 border-slate-700"],
+        sinDatos: ["ℹ️ Sin comparar", "bg-slate-800 text-slate-400 border-slate-700"]
       };
-      const [label, cls] = estilos[v.tipo] || estilos.normal;
-      return `<div class="mb-2" title="${esc(v.texto)}"><span class="text-[10px] font-bold border px-2 py-0.5 rounded ${cls}">${label}</span><div class="text-[10px] text-slate-500 mt-1">${esc(v.texto)}</div></div>`;
+      const [label, cls] = estilos[v.tipo] || estilos.sinDatos;
+      const hist = item.historial ? `<div class="text-[10px] text-slate-500">🕒 ${esc(item.historial.texto)}</div>` : "";
+      return `<div class="mb-2"><span class="text-[10px] font-bold border px-2 py-0.5 rounded ${cls}">${label}</span><div class="text-[10px] text-slate-400 mt-1">${esc(v.texto)}</div>${hist}</div>`;
     }
 
     function comparacionHTML(item) {

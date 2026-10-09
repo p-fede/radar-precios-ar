@@ -8,9 +8,10 @@ import { queryStore, runPool } from "../lib/adapters.js";
 import { annotate } from "../lib/analysis.js";
 import { savePrices, dbEnabled } from "../lib/db.js";
 
-export const config = { maxDuration: 30 };
+export const config = { maxDuration: 40 };
 
-const GLOBAL_BUDGET = 13000;
+const GLOBAL_BUDGET = 11000; // búsqueda en tiendas
+const MARKET_BUDGET = 8000;  // comparación de mercado
 const CONCURRENCY = 14;
 
 export default async function handler(req, res) {
@@ -48,25 +49,30 @@ export default async function handler(req, res) {
     pool = pool.filter(s => s.platform !== "extension");
     if (!pool.length) return res.status(400).json({ error: "No hay tiendas válidas para consultar." });
 
-    const perStore = pool.length === 1 ? 40 : pool.length <= 6 ? 20 : 12;
+    const perStore = pool.length === 1 ? 100 : pool.length <= 6 ? 30 : 15;
     const results = await runPool(pool, s => queryStore(s, rawQ, perStore), CONCURRENCY, GLOBAL_BUDGET);
 
     let items = [];
     const seen = new Set();
-    for (const r of results) for (const it of r.items || []) {
-      if (seen.has(it.url)) continue;
-      seen.add(it.url);
-      items.push(it);
+    for (const r of results) {
+      let propios = (r.items || []).filter(it => !seen.has(it.url) && seen.add(it.url));
+      // Sin búsqueda mostramos ofertas: si la tienda tiene productos con rebaja, priorizamos esos
+      if (!rawQ) {
+        const conRebaja = propios.filter(it => it.descuento > 0 || it.promo);
+        if (conRebaja.length >= 3) propios = conRebaja;
+      }
+      propios.sort((a, b) => (b.descuento - a.descuento) || (b.ahorro - a.ahorro));
+      items.push(...propios.slice(0, perStore));
     }
 
-    // Guardamos la foto de precios (alimenta el historial) y analizamos cada oferta
-    await Promise.all([savePrices(items, 2500), annotate(items)]);
+    // Comparamos contra el precio de mercado y guardamos la foto de precios (alimenta el historial)
+    await Promise.all([annotate(items, { budgetMs: MARKET_BUDGET }), savePrices(items, 2500)]);
 
-    if (minDisc > 0) items = items.filter(it => it.descuento >= minDisc || it.isBug);
-    const peso = { real: 2, normal: 1, nuevo: 1, inflado: 0 };
+    if (minDisc > 0) items = items.filter(it => it.descuento >= minDisc || it.isBug || it.veredicto?.tipo === "real");
+    const peso = { bug: 5, real: 4, sinConfirmar: 3, normal: 2, sinDatos: 2, inflado: 0 };
     items.sort((a, b) =>
-      (b.isBug - a.isBug) ||
-      ((peso[b.veredicto?.tipo] ?? 1) - (peso[a.veredicto?.tipo] ?? 1)) ||
+      ((peso[b.veredicto?.tipo] ?? 2) - (peso[a.veredicto?.tipo] ?? 2)) ||
+      ((b.mercado?.bajoMercado ?? -99) - (a.mercado?.bajoMercado ?? -99)) ||
       (b.descuento - a.descuento) || (b.ahorro - a.ahorro));
 
     const fallidas = results.filter(r => r.error);
