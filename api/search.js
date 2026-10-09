@@ -123,6 +123,24 @@ const DIRECTORY = [
   { id: "citykids", name: "CityKids", url: "https://www.citykids.com.ar", rubro: "juguetes", platform: "auto" },
   { id: "creciendo", name: "Creciendo", url: "https://www.creciendo.com", rubro: "juguetes", platform: "auto" },
   { id: "carrousel", name: "Carrousel", url: "https://www.carrousel.com.ar", rubro: "juguetes", platform: "auto" },
+  { id: "mundodeljuguete", name: "El Mundo del Juguete", url: "https://www.mundodeljuguete.com.ar", rubro: "juguetes", platform: "auto" },
+  { id: "imaginarte", name: "Imaginarte", url: "https://www.imaginarte.com.ar", rubro: "juguetes", platform: "auto" },
+
+  // --- ROPA INFANTIL ---
+  { id: "cheeky", name: "Cheeky", url: "https://www.cheeky.com.ar", rubro: "infantil", platform: "auto" },
+  { id: "grisino", name: "Grisino", url: "https://www.grisino.com", rubro: "infantil", platform: "auto" },
+  { id: "mimo", name: "Mimo & Co", url: "https://www.mimo.com.ar", rubro: "infantil", platform: "auto" },
+  { id: "owoko", name: "Owoko", url: "https://www.owoko.com.ar", rubro: "infantil", platform: "auto" },
+  { id: "littleakiabara", name: "Little Akiabara", url: "https://www.littleakiabara.com", rubro: "infantil", platform: "auto" },
+  { id: "pioppa", name: "Pioppa", url: "https://www.pioppa.com.ar", rubro: "infantil", platform: "auto" },
+  { id: "minimimo", name: "Minimimo", url: "https://www.minimimo.com.ar", rubro: "infantil", platform: "auto" },
+  { id: "babycottons", name: "Baby Cottons", url: "https://www.babycottons.com.ar", rubro: "infantil", platform: "auto" },
+  { id: "mapamundi", name: "Mapamundi Kids", url: "https://www.mapamundikids.com.ar", rubro: "infantil", platform: "auto" },
+  { id: "yamp", name: "Yamp", url: "https://www.yamp.com.ar", rubro: "infantil", platform: "auto" },
+  { id: "magdalenaesposito", name: "Magdalena Esposito", url: "https://www.magdalenaesposito.com", rubro: "infantil", platform: "auto" },
+
+  // --- SUPERMERCADO (plataforma propia) ---
+  { id: "coto", name: "Coto Digital", url: "https://www.cotodigital.com.ar", rubro: "supermercados", platform: "auto" },
 
   // --- MERCADOLIBRE (requiere token; ver README) ---
   { id: "mercadolibre", name: "MercadoLibre", url: "https://www.mercadolibre.com.ar", rubro: "tecnologia", platform: "mercadolibre" }
@@ -370,6 +388,46 @@ export default async function handler(req, res) {
       }));
       res.setHeader("Cache-Control", "public, s-maxage=1800, stale-while-revalidate=86400");
       return res.status(200).json({ checkedAt: new Date().toISOString(), total: stores.length, activas: stores.filter(s => s.ok).length, stores });
+    }
+
+    // ---- TEMPORAL: sonda de diagnóstico (se elimina al terminar la puesta a punto) ----
+    if (mode === "probe") {
+      const base = String(req.query.base || "");
+      let u;
+      try { u = new URL(base); } catch { return res.status(400).json({ error: "base inválida" }); }
+      if (u.protocol !== "https:" || /^[\d.]+$/.test(u.hostname) || !u.hostname.includes(".")) return res.status(400).json({ error: "solo https con dominio" });
+      const fake = { id: "probe", name: u.hostname, url: base.replace(/\/$/, ""), rubro: "probe" };
+      const out = { base };
+      // marcadores de plataforma en la home
+      try {
+        const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), STORE_TIMEOUT);
+        const r = await fetch(base, { headers: { ...HEADERS, Accept: "text/html" }, signal: ctrl.signal, redirect: "follow" });
+        const h = (await r.text()).toLowerCase();
+        out.home = { status: r.status, finalUrl: r.url, len: h.length,
+          markers: ["vtex", "mitiendanube", "nuvemshop", "tiendanube", "cdn.shopify", "woocommerce", "wp-content", "magento", "mage/", "prestashop", "demandware", "salesforce", "__next_data__", "vtexassets", "empretienda", "jumpseller", "tiendup", "atg", "endeca", "cotodigital"].filter(k => h.includes(k)) };
+      } catch (e) { out.home = { error: e.name === "AbortError" ? "timeout" : (e.cause?.code || e.message) }; }
+      for (const plat of AUTO_ORDER) {
+        try { const items = await ADAPTERS[plat](fake, String(req.query.q || ""), 3); out[plat] = { ok: true, n: items.length, sample: items[0]?.nombre }; }
+        catch (e) { out[plat] = { ok: false, motivo: e.message }; }
+      }
+      return res.status(200).json(out);
+    }
+
+    // ---- TEMPORAL: lectura cruda de una URL (diagnóstico) ----
+    if (mode === "raw") {
+      let u;
+      try { u = new URL(String(req.query.url || "")); } catch { return res.status(400).json({ error: "url inválida" }); }
+      if (u.protocol !== "https:" || /^[\d.]+$/.test(u.hostname) || !u.hostname.includes(".")) return res.status(400).json({ error: "solo https con dominio" });
+      try {
+        const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), STORE_TIMEOUT);
+        const r = await fetch(u.href, { headers: { ...HEADERS, Accept: req.query.accept || "*/*" }, signal: ctrl.signal, redirect: "follow" });
+        const t = await r.text();
+        const grep = req.query.grep ? String(req.query.grep) : null;
+        let hits = null;
+        if (grep) { hits = []; let i = -1; const low = t.toLowerCase(); const g = grep.toLowerCase(); while ((i = low.indexOf(g, i + 1)) !== -1 && hits.length < 8) hits.push(t.slice(Math.max(0, i - 150), i + 250)); }
+        const from = parseInt(req.query.from || "0", 10) || 0;
+        return res.status(200).json({ status: r.status, finalUrl: r.url, type: r.headers.get("content-type"), len: t.length, head: t.slice(from, from + 2500), hits });
+      } catch (e) { return res.status(200).json({ error: e.name === "AbortError" ? "timeout" : (e.cause?.code || e.message) }); }
     }
 
     // ---- Selección de tiendas ----
