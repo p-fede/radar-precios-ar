@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "RadarBug Puente",
+  "version": "1.0.0",
+  "description": "Deja que radar-precios-ar.vercel.app consulte, desde tu navegador, las tiendas que bloquean servidores.",
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [
+    {
+      "matches": ["https://radar-precios-ar.vercel.app/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "host_permissions": [
+    "https://www.fullh4rd.com.ar/*",
+    "https://libreopcion.com.ar/*",
+    "https://somosrex.com/*",
+    "https://www.sommiercenter.com/*",
+    "https://www.adidas.com.ar/*",
+    "https://www.nike.com.ar/*",
+    "https://www.opensports.com.ar/*",
+    "https://www.quiksilver.com.ar/*",
+    "https://bowen.com.ar/*",
+    "https://www.lacoste.com/*",
+    "https://www.centraloeste.com.ar/*",
+    "https://www.parfumerie.com.ar/*",
+    "https://www.naturacosmeticos.com.ar/*",
+    "https://www.staples.com.ar/*"
+  ]
+}

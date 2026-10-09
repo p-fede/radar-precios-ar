@@ -1,5 +1,8 @@
 {
   "name": "radar-precios-ar",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "puente": "node scripts/build-puente.js"
+  }
 }
