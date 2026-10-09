@@ -53,8 +53,8 @@ const DIRECTORY = [
   { id: "blaisten", name: "Blaisten", url: "https://www.blaisten.com.ar", rubro: "herramientas", platform: "auto" },
   { id: "bercomat", name: "Familia Bercomat", url: "https://familiabercomat.com", rubro: "herramientas", platform: "auto" },
   { id: "rex", name: "Pinturerías Rex", url: "https://www.pintureriasrex.com", rubro: "herramientas", platform: "auto" },
-  { id: "lusqtoff", name: "Lüsqtoff Oficial", url: "https://tienda.lusqtoff.com.ar", rubro: "herramientas", platform: "auto" },
-  { id: "gamma", name: "Gamma Herramientas", url: "https://www.tiendagamma.com.ar", rubro: "herramientas", platform: "auto" },
+  { id: "lusqtoff", name: "Lüsqtoff Oficial", url: "https://www.lusqtoff.com.ar", rubro: "herramientas", platform: "auto" },
+  { id: "gamma", name: "Gamma Herramientas", url: "https://www.gammaherramientas.com.ar", rubro: "herramientas", platform: "auto" },
 
   // --- HOGAR ---
   { id: "simmons", name: "Simmons", url: "https://www.simmons.com.ar", rubro: "hogar", platform: "vtex" },
@@ -69,11 +69,11 @@ const DIRECTORY = [
   { id: "electrolux", name: "Electrolux", url: "https://tienda.electrolux.com.ar", rubro: "electro", platform: "vtex" },
   { id: "philips", name: "Philips Tienda", url: "https://tienda.philips.com.ar", rubro: "electro", platform: "vtex" },
   { id: "whirlpool", name: "Whirlpool", url: "https://www.whirlpool.com.ar", rubro: "electro", platform: "auto" },
-  { id: "drean", name: "Drean", url: "https://tienda.drean.com.ar", rubro: "electro", platform: "auto" },
-  { id: "longvie", name: "Longvie", url: "https://tienda.longvie.com", rubro: "electro", platform: "auto" },
-  { id: "bgh", name: "BGH Store", url: "https://hogar.bgh.com.ar", rubro: "electro", platform: "auto" },
+  { id: "drean", name: "Drean", url: "https://www.drean.com.ar", rubro: "electro", platform: "auto" },
+  { id: "longvie", name: "Longvie", url: "https://www.longvie.com", rubro: "electro", platform: "auto" },
+  { id: "bgh", name: "BGH Store", url: "https://www.bgh.com.ar", rubro: "electro", platform: "auto" },
   { id: "peabody", name: "Peabody", url: "https://www.peabody.com.ar", rubro: "electro", platform: "auto" },
-  { id: "liliana", name: "Liliana", url: "https://tienda.liliana.com.ar", rubro: "electro", platform: "auto" },
+  { id: "liliana", name: "Liliana", url: "https://www.liliana.com.ar", rubro: "electro", platform: "auto" },
   { id: "yelmo", name: "Yelmo", url: "https://www.yelmo.com.ar", rubro: "electro", platform: "auto" },
   { id: "ultracomb", name: "Ultracomb", url: "https://www.ultracomb.com.ar", rubro: "electro", platform: "auto" },
 
@@ -112,7 +112,7 @@ const DIRECTORY = [
   { id: "simplicity", name: "Simplicity", url: "https://www.simplicity.com.ar", rubro: "farmacia", platform: "vtex" },
   { id: "centraloeste", name: "Central Oeste", url: "https://www.centraloeste.com.ar", rubro: "farmacia", platform: "auto" },
   { id: "delpuente", name: "Farmacias del Puente", url: "https://www.farmaciasdelpuente.com.ar", rubro: "farmacia", platform: "auto" },
-  { id: "pedidosfarma", name: "PedidosFarma", url: "https://www.pedidosfarma.com.ar", rubro: "farmacia", platform: "auto" },
+  { id: "pedidosfarma", name: "PedidosFarma", url: "https://pedidosfarma.com.ar", rubro: "farmacia", platform: "auto" },
   { id: "parfumerie", name: "Parfumerie", url: "https://www.parfumerie.com.ar", rubro: "farmacia", platform: "auto" },
   { id: "natura", name: "Natura", url: "https://www.naturacosmeticos.com.ar", rubro: "farmacia", platform: "auto" },
 
