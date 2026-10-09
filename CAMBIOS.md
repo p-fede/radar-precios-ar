@@ -1,19 +1,30 @@
 # RadarBug — estado y configuración
 
 ## Qué hay
-- **63 tiendas activas desde la web** (VTEX, WooCommerce, Tiendanube, Magento, Salesforce, Coto, Cheeky, Sodimac, PrestaShop, Venex, Montagne).
+- **61 tiendas activas desde la web** (VTEX, WooCommerce, Tiendanube, Magento, Salesforce, Coto, Cheeky, Sodimac, PrestaShop, Venex, Montagne).
 - **14 tiendas vía extensión** (bloquean servidores): Adidas, Nike, Lacoste, Natura, Staples, Full H4rd, LibreOpción, Quiksilver, Open Sports, Bowen, Rex, SommierCenter, Central Oeste, Parfumerie.
 - **Ocultas por ahora** (sitios armados con JavaScript o caídos): Megatone, CompraGamer, Bidcom, Maximus, Mexx, Start, Atajo, Kevingston, Lüsqtoff, Bercomat, Drean, Peabody, Puma, Magdalena Esposito, Imaginarte, Farmacias del Puente, Musimundo (en mantenimiento).
+- Ocultas porque no publican precios: Gamma Herramientas y Colombraro.
 - Fuera de la lista: Dafiti (dejó de vender en Argentina), y dominios que ya no existen (El Mundo del Juguete, Minimimo, Mapamundi, Yamp, PedidosFarma).
 - Carrousel resultó ser una tienda de decoración: quedó en "Hogar".
 
-## Análisis de ofertas
-- **Comparación por código de barras (EAN)**: cada tarjeta muestra "💡 $X más barato en Tienda" o "🏆 Mejor precio entre N tiendas". El botón "🔎 Comparar en otras tiendas" busca ese EAN en vivo en todas las tiendas VTEX y Coto.
-- **Historial** (requiere Supabase): cada búsqueda y una tarea diaria guardan precios. Con 5+ días de datos, cada oferta se etiqueta:
-  - ✅ **Oferta real**: precio más bajo de los últimos 60 días.
-  - ⚠️ **Descuento inflado**: muestra descuento pero cuesta lo de siempre (y deja de contar como "precio bug").
-  - 📊 **Precio habitual**.
-- Promos por cantidad (2x1, 3x2, 2da al 70%) se muestran aparte y no cuentan como "precio bug".
+## Análisis de ofertas (cómo decide)
+El precio tachado de las tiendas NO es confiable (ej.: en VTEX, `ListPrice` de una cafetera de $65.280 decía $74.776.664).
+Por eso cada producto se compara contra el **precio de mercado**: el mismo código de barras (EAN) en todas las tiendas
+VTEX y Coto, consultados en cada búsqueda.
+
+- 🚨 **Bug confirmado**: 50% o más debajo de la mediana de al menos 2 tiendas.
+- ✅ **Oferta real**: es el más barato y está 8% o más debajo del resto.
+- ⚠️ **Descuento inflado**: muestra descuento pero cuesta lo mismo que en otras tiendas.
+- 📊 **Precio de mercado**: precio normal; muestra si está más barato en otra tienda.
+- ❔ **Descuento muy alto (sin confirmar)**: la tienda marca 65%+ pero el producto no aparece en otras tiendas.
+- ℹ️ **Sin comparar**: tiendas que no publican código de barras (ropa, juguetes, Sodimac, Salesforce...).
+
+Reglas de datos: se ignora un precio tachado mayor a 5× el precio (dato roto); en VTEX se usa `PriceWithoutDiscount`
+(confiable) y `ListPrice` solo si es razonable. Las promos por cantidad (2x1, 3x2, 2da al 70%) y las campañas
+("Hasta 35% en Almacén") se muestran como 🎁 promo, sin inventar un porcentaje.
+
+Con Supabase configurado se suma el historial propio (precio más bajo en N días / cuesta lo de siempre).
 
 ## Configuración pendiente (la hacés vos, una sola vez)
 
