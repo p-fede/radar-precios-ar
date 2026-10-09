@@ -3,336 +3,267 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detector Pro — Rastreador de Ofertas y Precios Bug en +100 Tiendas</title>
+  <title>RADAR.AR — Ofertas reales y precios bug en tiendas argentinas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes pulseGlow {
       0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
       50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
     }
-    .bug-card {
-      animation: pulseGlow 2s infinite ease-in-out;
-    }
+    .bug-card { animation: pulseGlow 2s infinite ease-in-out; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @media (prefers-reduced-motion: reduce) { .bug-card, .animate-pulse { animation: none; } }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- Header Superior -->
   <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <span class="text-2xl">⚡</span>
         <div>
           <span class="font-black text-xl tracking-tight text-white">RADAR<span class="text-indigo-400">.AR</span></span>
-          <span class="text-[10px] uppercase font-bold tracking-widest bg-emerald-950 border border-emerald-700/60 text-emerald-300 px-2 py-0.5 rounded-full ml-2">106+ TIENDAS</span>
+          <span id="badgeStores" class="text-[10px] uppercase font-bold tracking-widest bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded-full ml-2">verificando tiendas…</span>
         </div>
       </div>
-      <div id="statsBar" class="hidden md:flex items-center gap-6 text-xs text-slate-400 font-medium">
-        <div>Tiendas: <b id="statStores" class="text-white">106</b></div>
+      <div class="hidden md:flex items-center gap-6 text-xs text-slate-400 font-medium">
+        <div>Tiendas activas: <b id="statStores" class="text-white">–</b></div>
         <div>Detectados: <b id="statTotal" class="text-white">0</b></div>
-        <div>Bugs Activos: <b id="statBugs" class="text-rose-400">0</b></div>
-        <div>Máx Descuento: <b id="statMax" class="text-emerald-400">0%</b></div>
+        <div>Bugs: <b id="statBugs" class="text-rose-400">0</b></div>
+        <div>Máx. descuento: <b id="statMax" class="text-emerald-400">0%</b></div>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-8">
-    
-    <!-- Hero -->
     <div class="text-center max-w-3xl mx-auto mb-8">
-      <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight mb-3">
-        Radar de Ofertas y Precios Bug
-      </h1>
-      <p class="text-slate-400 text-sm md:text-base">
-        Rastreá liquidaciones extremas, errores de carga y promociones reales en más de 100 tiendas y marcas de Argentina.
-      </p>
+      <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight mb-3">Radar de Ofertas y Precios Bug</h1>
+      <p class="text-slate-400 text-sm md:text-base">Liquidaciones extremas, errores de carga y promociones reales en tiendas de Argentina.</p>
     </div>
 
-    <!-- Panel de Filtros -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 mb-6 shadow-xl">
-      
-      <!-- Fila 1: Búsqueda libre, Tienda directa y Descuento -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-        <div class="md:col-span-2">
-          <input id="qInput" type="text" placeholder="¿Qué buscás? (ej: zapatillas, taladro, celular, café, smart tv...)" 
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
+        <div class="md:col-span-3">
+          <input id="qInput" type="search" maxlength="80" placeholder="¿Qué buscás? (zapatillas, taladro, celular, café, smart tv…)"
                  class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm outline-none focus:border-indigo-500 font-medium">
         </div>
-        
-        <!-- Selector desplegable de más de 100 tiendas directas -->
         <div>
-          <select id="storeSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-indigo-500 font-medium cursor-pointer">
-            <option value="todas" selected>🌐 Todas las Tiendas</option>
-            <optgroup label="Supermercados">
-              <option value="carrefour">Carrefour</option>
-              <option value="dia">Día Online</option>
-              <option value="jumbo">Jumbo</option>
-              <option value="disco">Disco</option>
-              <option value="vea">Vea</option>
-              <option value="changomas">ChangoMás</option>
-            </optgroup>
-            <optgroup label="Tecnología, Gaming y Celulares">
-              <option value="mercadolibre">MercadoLibre</option>
-              <option value="cetrogar">Cetrogar</option>
-              <option value="megatone">Megatone</option>
-              <option value="musimundo">Musimundo</option>
-              <option value="naldo">Naldo</option>
-              <option value="bidcom">Bidcom</option>
-              <option value="sony">Sony Store</option>
-              <option value="motorola">Motorola</option>
-              <option value="samsung">Samsung</option>
-              <option value="lenovo">Lenovo</option>
-              <option value="start">Start_</option>
-              <option value="venex">Venex</option>
-              <option value="mexx">Mexx</option>
-              <option value="maximus">Maximus Gaming</option>
-              <option value="fullh4rd">Full H4rd</option>
-              <option value="libreopcion">LibreOpción</option>
-            </optgroup>
-            <optgroup label="Herramientas y Construcción">
-              <option value="easy">Easy</option>
-              <option value="sodimac">Sodimac</option>
-              <option value="blaisten">Blaisten</option>
-              <option value="bercomat">Familia Bercomat</option>
-              <option value="prestigio">Pinturerías Prestigio</option>
-              <option value="rex">Pinturerías Rex</option>
-              <option value="lusqtoff">Lüsqtoff</option>
-              <option value="gamma">Gamma Herramientas</option>
-            </optgroup>
-            <optgroup label="Electrodomésticos y Hogar">
-              <option value="whirlpool">Whirlpool</option>
-              <option value="drean">Drean</option>
-              <option value="longvie">Longvie</option>
-              <option value="bgh">BGH</option>
-              <option value="philips">Philips</option>
-              <option value="electrolux">Electrolux</option>
-              <option value="peabody">Peabody</option>
-              <option value="liliana">Liliana</option>
-              <option value="yelmo">Yelmo</option>
-              <option value="sommiercenter">SommierCenter</option>
-              <option value="cardeuse">La Cardeuse</option>
-              <option value="simmons">Simmons</option>
-              <option value="arredo">Arredo</option>
-              <option value="morph">Morph</option>
-              <option value="colombraro">Colombraro</option>
-            </optgroup>
-            <optgroup label="Deportes y Zapatillas">
-              <option value="adidas">Adidas</option>
-              <option value="nike">Nike</option>
-              <option value="puma">Puma</option>
-              <option value="topper">Topper</option>
-              <option value="dexter">Dexter</option>
-              <option value="stockcenter">Stock Center</option>
-              <option value="moov">Moov</option>
-              <option value="solodeportes">Solo Deportes</option>
-              <option value="opensports">Open Sports</option>
-              <option value="sportline">Sportline</option>
-              <option value="dash">Dash</option>
-              <option value="grid">Grid</option>
-              <option value="montagne">Montagne</option>
-              <option value="scandinavian">Scandinavian</option>
-              <option value="cristobalcolon">Cristóbal Colón</option>
-            </optgroup>
-            <optgroup label="Moda y Calzado">
-              <option value="levis">Levi's</option>
-              <option value="lacoste">Lacoste</option>
-              <option value="dafiti">Dafiti</option>
-              <option value="bowen">Bowen</option>
-              <option value="kevingston">Kevingston</option>
-            </optgroup>
-            <optgroup label="Farmacia y Perfumería">
-              <option value="farmacity">Farmacity</option>
-              <option value="centraloeste">Central Oeste</option>
-              <option value="delpuente">Farmacias del Puente</option>
-              <option value="pedidosfarma">PedidosFarma</option>
-              <option value="pigmento">Pigmento</option>
-              <option value="julieriaque">Juleriaque</option>
-              <option value="rouge">Rouge</option>
-              <option value="parfumerie">Parfumerie</option>
-              <option value="simplicity">Simplicity</option>
-              <option value="natura">Natura</option>
-            </optgroup>
-            <optgroup label="Librerías y Juguetes">
-              <option value="cuspide">Cúspide</option>
-              <option value="yenny">Yenny / El Ateneo</option>
-              <option value="citykids">CityKids</option>
-              <option value="creciendo">Creciendo</option>
-              <option value="carrousel">Carrousel</option>
-              <option value="staples">Staples</option>
-            </optgroup>
+          <select id="storeSelect" disabled class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-indigo-500 font-medium cursor-pointer disabled:opacity-50">
+            <option value="todas">Cargando tiendas…</option>
           </select>
         </div>
-
         <div>
-          <button id="searchBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3 rounded-xl transition duration-150 flex items-center justify-center gap-2 text-sm shadow cursor-pointer">
-            <span>⚡</span> Rastrear Ofertas
+          <select id="discSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:border-indigo-500 font-medium cursor-pointer">
+            <option value="0">Cualquier descuento</option>
+            <option value="20">−20% o más</option>
+            <option value="35">−35% o más</option>
+            <option value="50">−50% o más</option>
+            <option value="65">−65% o más</option>
+          </select>
+        </div>
+        <div>
+          <button id="searchBtn" disabled class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:cursor-wait text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow cursor-pointer">
+            <span>⚡</span> Rastrear
           </button>
         </div>
       </div>
 
-      <!-- Fila 2: Pestañas de Rubros Rápidos -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs border-t border-slate-800/80 pt-3" id="rubroTabs">
-        <button data-rubro="todos" class="rubro-btn px-3 py-1.5 rounded-lg font-bold bg-indigo-600 text-white whitespace-nowrap">🔥 Todos los Rubros</button>
-        <button data-rubro="supermercados" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🛒 Supermercados</button>
-        <button data-rubro="tecnologia" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">💻 Tecno & Celulares</button>
-        <button data-rubro="herramientas" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🔧 Herramientas</button>
-        <button data-rubro="electro" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🔌 Electro & Clima</button>
-        <button data-rubro="deportes" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">👟 Deportes & Zapas</button>
-        <button data-rubro="hogar" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">🛋️ Hogar & Muebles</button>
-        <button data-rubro="farmacia" class="rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">💄 Farmacia & Belleza</button>
-      </div>
+      <div id="rubroTabs" class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs border-t border-slate-800/80 pt-3"></div>
     </div>
 
-    <!-- Indicador de Estado -->
-    <div id="status" class="text-center text-slate-400 my-8 hidden"></div>
-
-    <!-- Grilla de Resultados -->
+    <div id="status" class="text-center text-slate-400 my-8"></div>
     <div id="results" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5"></div>
+    <div id="footerInfo" class="text-center text-xs text-slate-500 mt-8"></div>
   </main>
 
   <script>
+    const RUBROS = {
+      todos: "🔥 Todos", supermercados: "🛒 Supermercados", tecnologia: "💻 Tecno & Celulares",
+      herramientas: "🔧 Herramientas", electro: "🔌 Electro & Clima", hogar: "🛋️ Hogar & Muebles",
+      deportes: "👟 Deportes & Zapas", moda: "👕 Moda", farmacia: "💄 Farmacia & Belleza",
+      libreria: "📚 Librería", juguetes: "🧸 Juguetes"
+    };
+
+    const $ = id => document.getElementById(id);
+    const searchBtn = $("searchBtn"), qInput = $("qInput"), storeSelect = $("storeSelect"),
+          discSelect = $("discSelect"), statusDiv = $("status"), resultsDiv = $("results"),
+          rubroTabs = $("rubroTabs"), footerInfo = $("footerInfo");
+
     let activeRubro = "todos";
-    const searchBtn = document.getElementById("searchBtn");
-    const qInput = document.getElementById("qInput");
-    const storeSelect = document.getElementById("storeSelect");
-    const statusDiv = document.getElementById("status");
-    const resultsDiv = document.getElementById("results");
-    const rubroTabs = document.getElementById("rubroTabs");
+    let activeStores = [];   // tiendas que pasaron el chequeo de salud
+    let caidas = [];
+    let reqSeq = 0;
 
-    // Click en Rubros
-    rubroTabs.querySelectorAll(".rubro-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        rubroTabs.querySelectorAll(".rubro-btn").forEach(b => {
-          b.className = "rubro-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap";
-        });
-        btn.className = "rubro-btn px-3 py-1.5 rounded-lg font-bold bg-indigo-600 text-white whitespace-nowrap";
+    // ---------- helpers seguros ----------
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const safeUrl = u => { try { const x = new URL(u); return (x.protocol === "https:" || x.protocol === "http:") ? x.href : "#"; } catch { return "#"; } };
+    const money = n => "$ " + Number(n).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+
+    function showStatus(html) { statusDiv.innerHTML = html; statusDiv.classList.remove("hidden"); }
+    function spinner(text) {
+      return `<div class="inline-flex items-center gap-2.5 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-slate-200 text-sm shadow">
+        <svg class="animate-spin h-4 w-4 text-indigo-400" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+        ${esc(text)}</div>`;
+    }
+    function box(text, tone = "slate") {
+      const tones = { slate: "bg-slate-900 border-slate-800 text-slate-300", rose: "bg-rose-950/80 border-rose-500/40 text-rose-300" };
+      return `<div class="${tones[tone]} border px-5 py-3 rounded-xl inline-block text-sm">${esc(text)}</div>`;
+    }
+
+    // ---------- 1) Chequeo de salud: solo mostramos tiendas que responden ----------
+    async function cargarTiendas() {
+      showStatus(spinner("Verificando qué tiendas están respondiendo…"));
+      try {
+        const r = await fetch("/api/search?mode=health");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const j = await r.json();
+        activeStores = j.stores.filter(s => s.ok);
+        caidas = j.stores.filter(s => !s.ok);
+      } catch (e) {
+        showStatus(box("No se pudo verificar el estado de las tiendas. Recargá la página en unos segundos.", "rose"));
+        return false;
+      }
+      if (!activeStores.length) {
+        showStatus(box("Ninguna tienda está respondiendo en este momento. Probá más tarde.", "rose"));
+        return false;
+      }
+
+      $("statStores").textContent = activeStores.length;
+      $("badgeStores").textContent = `${activeStores.length} tiendas activas`;
+      $("badgeStores").className = "text-[10px] uppercase font-bold tracking-widest bg-emerald-950 border border-emerald-700/60 text-emerald-300 px-2 py-0.5 rounded-full ml-2";
+
+      construirTabs();
+      construirSelector();
+      storeSelect.disabled = false;
+      searchBtn.disabled = false;
+      return true;
+    }
+
+    function construirTabs() {
+      const presentes = new Set(activeStores.map(s => s.rubro));
+      rubroTabs.innerHTML = Object.entries(RUBROS)
+        .filter(([k]) => k === "todos" || presentes.has(k))
+        .map(([k, label]) => `<button data-rubro="${k}" class="rubro-btn px-3 py-1.5 rounded-lg whitespace-nowrap">${esc(label)}</button>`)
+        .join("");
+      rubroTabs.querySelectorAll(".rubro-btn").forEach(btn => btn.addEventListener("click", () => {
         activeRubro = btn.dataset.rubro;
-        storeSelect.value = "todas"; // restablecer a todas dentro de ese rubro
+        pintarTabs();
+        construirSelector();
         ejecutar();
+      }));
+      pintarTabs();
+    }
+
+    function pintarTabs() {
+      rubroTabs.querySelectorAll(".rubro-btn").forEach(b => {
+        const on = b.dataset.rubro === activeRubro;
+        b.className = "rubro-btn px-3 py-1.5 rounded-lg whitespace-nowrap " +
+          (on ? "font-bold bg-indigo-600 text-white" : "font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700");
       });
-    });
+    }
 
-    // Cambio en selector directo de tienda
-    storeSelect.addEventListener("change", () => {
-      ejecutar();
-    });
+    function construirSelector() {
+      const lista = activeRubro === "todos" ? activeStores : activeStores.filter(s => s.rubro === activeRubro);
+      const grupos = {};
+      lista.forEach(s => (grupos[s.rubro] ||= []).push(s));
+      let html = `<option value="todas">🌐 Todas (${lista.length})</option>`;
+      for (const [rubro, tiendas] of Object.entries(grupos)) {
+        html += `<optgroup label="${esc((RUBROS[rubro] || rubro).replace(/^\S+\s/, ""))}">` +
+          tiendas.sort((a, b) => a.name.localeCompare(b.name, "es")).map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("") +
+          `</optgroup>`;
+      }
+      storeSelect.innerHTML = html;
+    }
 
+    // ---------- 2) Búsqueda ----------
     async function ejecutar() {
+      if (!activeStores.length) return;
+      const seq = ++reqSeq;
       const q = qInput.value.trim();
-      const store = storeSelect.value;
+      const elegida = storeSelect.value;
+      const ids = elegida !== "todas"
+        ? [elegida]
+        : (activeRubro === "todos" ? activeStores : activeStores.filter(s => s.rubro === activeRubro)).map(s => s.id);
 
-      statusDiv.innerHTML = `
-        <div class="inline-flex items-center gap-2.5 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl text-slate-200 text-sm shadow">
-          <svg class="animate-spin h-4 w-4 text-indigo-400" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-          Escaneando catálogos de tiendas y fotos en HD...
-        </div>
-      `;
-      statusDiv.classList.remove("hidden");
+      showStatus(spinner(`Escaneando ${ids.length} tienda${ids.length > 1 ? "s" : ""}…`));
       resultsDiv.innerHTML = "";
+      footerInfo.textContent = "";
       searchBtn.disabled = true;
 
       try {
-        const res = await fetch(`/api/search?store=${store}&rubro=${activeRubro}&q=${encodeURIComponent(q)}`);
-        const json = await res.json();
-        const data = json.results || [];
+        const params = new URLSearchParams({ ids: ids.join(","), q, minDiscount: discSelect.value });
+        const res = await fetch(`/api/search?${params}`);
+        const json = await res.json().catch(() => ({}));
+        if (seq !== reqSeq) return; // llegó una respuesta vieja: la ignoramos
+        if (!res.ok) throw new Error(json.error || "HTTP " + res.status);
 
-        if (!data || data.length === 0) {
-          statusDiv.innerHTML = `
-            <div class="bg-slate-900 border border-slate-800 text-slate-300 px-5 py-3 rounded-xl inline-block text-sm">
-              No se detectaron ofertas en este rubro o término. Probá con otra búsqueda o seleccionando otra tienda.
-            </div>
-          `;
+        const data = json.results || [];
+        const fallidas = json.fallidas || [];
+        footerInfo.textContent = `Respondieron ${json.respondieron} de ${json.consultadas} tiendas consultadas` +
+          (fallidas.length ? ` · sin respuesta ahora: ${fallidas.map(f => f.name).join(", ")}` : "");
+
+        if (!data.length) {
+          showStatus(box(q
+            ? `No encontramos ofertas para "${q}" con ese filtro. Probá otra palabra, otra tienda o bajá el descuento mínimo.`
+            : "No hay ofertas con ese filtro en este momento. Probá bajar el descuento mínimo."));
+          actualizarStats([]);
           return;
         }
 
         statusDiv.classList.add("hidden");
-
-        // Actualizar Estadísticas
-        const bugCount = data.filter(d => d.isBug).length;
-        const maxDisc = Math.max(...data.map(d => d.descuento || 0));
-        document.getElementById("statTotal").textContent = data.length;
-        document.getElementById("statBugs").textContent = bugCount;
-        document.getElementById("statMax").textContent = `-${maxDisc}%`;
-
-        // Renderizado
-        resultsDiv.innerHTML = data.map(item => `
-          <div class="bg-slate-900 border ${item.isBug ? 'border-rose-500 bug-card' : 'border-slate-800'} rounded-2xl overflow-hidden flex flex-col justify-between hover:border-slate-600 transition group shadow-lg">
-            
-            <!-- Imagen -->
-            <div class="relative bg-white p-4 h-48 md:h-56 flex items-center justify-center overflow-hidden">
-              <img src="${item.img}" alt="${item.nombre}" loading="lazy" class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-300">
-              
-              <span class="absolute top-2.5 left-2.5 bg-slate-900/90 backdrop-blur text-slate-200 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow">
-                ${item.tienda}
-              </span>
-
-              ${item.descuento > 0 ? `
-                <span class="absolute top-2.5 right-2.5 ${item.isBug ? 'bg-rose-600' : 'bg-emerald-600'} text-white text-xs font-black px-2 py-0.5 rounded-md shadow">
-                  -${item.descuento}%
-                </span>
-              ` : ''}
-            </div>
-
-            <!-- Ficha -->
-            <div class="p-4 flex flex-col justify-between flex-1">
-              <div>
-                ${item.isBug ? `
-                  <div class="mb-2">
-                    <span class="text-[10px] font-black uppercase tracking-wider bg-rose-950 text-rose-300 border border-rose-800 px-2 py-0.5 rounded inline-block animate-pulse">
-                      🚨 PRECIO BUG / GANGA
-                    </span>
-                  </div>
-                ` : ''}
-
-                <a href="${item.url}" target="_blank" class="font-semibold text-xs md:text-sm text-slate-200 group-hover:text-indigo-400 transition line-clamp-2 mb-3" title="${item.nombre}">
-                  ${item.nombre}
-                </a>
-              </div>
-
-              <div class="pt-3 border-t border-slate-800/80">
-                <div class="flex items-baseline gap-2 mb-1">
-                  <span class="text-lg md:text-xl font-black text-emerald-400">
-                    $ ${item.precio.toLocaleString("es-AR")}
-                  </span>
-                  ${item.precioLista ? `
-                    <span class="text-xs text-slate-500 line-through">
-                      $ ${item.precioLista.toLocaleString("es-AR")}
-                    </span>
-                  ` : ''}
-                </div>
-
-                ${item.ahorro > 0 ? `
-                  <div class="text-[11px] text-slate-400 mb-3">
-                    Ahorrás: <b class="text-emerald-400">$ ${item.ahorro.toLocaleString("es-AR")}</b>
-                  </div>
-                ` : '<div class="h-4 mb-3"></div>'}
-
-                <a href="${item.url}" target="_blank" class="block w-full text-center bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 text-slate-200 hover:text-white py-2 rounded-xl text-xs font-bold transition">
-                  Ver Oferta ↗
-                </a>
-              </div>
-            </div>
-          </div>
-        `).join("");
-
+        actualizarStats(data);
+        resultsDiv.innerHTML = data.map(tarjeta).join("");
       } catch (err) {
-        statusDiv.innerHTML = `
-          <div class="bg-rose-950/80 border border-rose-500/40 text-rose-300 px-4 py-2.5 rounded-xl inline-block text-sm">
-            Error al consultar los catálogos. Intenta nuevamente.
-          </div>
-        `;
-        statusDiv.classList.remove("hidden");
+        if (seq !== reqSeq) return;
+        showStatus(box("Error al consultar las tiendas. Intentá nuevamente en unos segundos.", "rose"));
       } finally {
-        searchBtn.disabled = false;
+        if (seq === reqSeq) searchBtn.disabled = false;
       }
     }
 
-    searchBtn.addEventListener("click", ejecutar);
-    qInput.addEventListener("keypress", (e) => { if (e.key === "Enter") ejecutar(); });
+    function actualizarStats(data) {
+      $("statTotal").textContent = data.length;
+      $("statBugs").textContent = data.filter(d => d.isBug).length;
+      $("statMax").textContent = data.length ? `-${Math.max(...data.map(d => d.descuento || 0))}%` : "0%";
+    }
 
-    // Inicio automático
-    ejecutar();
+    function tarjeta(item) {
+      const url = esc(safeUrl(item.url));
+      const nombre = esc(item.nombre);
+      return `
+      <div class="bg-slate-900 border ${item.isBug ? "border-rose-500 bug-card" : "border-slate-800"} rounded-2xl overflow-hidden flex flex-col justify-between hover:border-slate-600 transition group shadow-lg">
+        <div class="relative bg-white p-4 h-48 md:h-56 flex items-center justify-center overflow-hidden">
+          <img src="${esc(safeUrl(item.img))}" alt="${nombre}" loading="lazy" referrerpolicy="no-referrer"
+               onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=300&q=80'"
+               class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-300">
+          <span class="absolute top-2.5 left-2.5 bg-slate-900/90 text-slate-200 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow">${esc(item.tienda)}</span>
+          ${item.descuento > 0 ? `<span class="absolute top-2.5 right-2.5 ${item.isBug ? "bg-rose-600" : "bg-emerald-600"} text-white text-xs font-black px-2 py-0.5 rounded-md shadow">-${Number(item.descuento)}%</span>` : ""}
+        </div>
+        <div class="p-4 flex flex-col justify-between flex-1">
+          <div>
+            ${item.isBug ? `<div class="mb-2"><span class="text-[10px] font-black uppercase tracking-wider bg-rose-950 text-rose-300 border border-rose-800 px-2 py-0.5 rounded inline-block animate-pulse">🚨 Precio bug / ganga</span></div>` : ""}
+            <a href="${url}" target="_blank" rel="noopener noreferrer" class="font-semibold text-xs md:text-sm text-slate-200 group-hover:text-indigo-400 transition line-clamp-2 mb-3" title="${nombre}">${nombre}</a>
+          </div>
+          <div class="pt-3 border-t border-slate-800/80">
+            <div class="flex items-baseline gap-2 mb-1 flex-wrap">
+              <span class="text-lg md:text-xl font-black text-emerald-400">${money(item.precio)}</span>
+              ${item.precioLista ? `<span class="text-xs text-slate-500 line-through">${money(item.precioLista)}</span>` : ""}
+            </div>
+            ${item.ahorro > 0 ? `<div class="text-[11px] text-slate-400 mb-3">Ahorrás: <b class="text-emerald-400">${money(item.ahorro)}</b></div>` : `<div class="h-4 mb-3"></div>`}
+            <a href="${url}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-slate-800 hover:bg-indigo-600 border border-slate-700 hover:border-indigo-500 text-slate-200 hover:text-white py-2 rounded-xl text-xs font-bold transition">Ver oferta ↗</a>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // ---------- eventos ----------
+    searchBtn.addEventListener("click", ejecutar);
+    storeSelect.addEventListener("change", ejecutar);
+    discSelect.addEventListener("change", ejecutar);
+    qInput.addEventListener("keydown", e => { if (e.key === "Enter") ejecutar(); });
+
+    cargarTiendas().then(ok => ok && ejecutar());
   </script>
 </body>
 </html>
